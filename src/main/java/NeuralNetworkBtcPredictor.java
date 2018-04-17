@@ -19,17 +19,17 @@ public class NeuralNetworkBtcPredictor {
     private String learningDataFilePath = "input/learningData.csv";
     private String neuralNetworkModelFilePath = "stockPredictor.nnet";
 
-    public static void main(String[] args) throws IOException{
-        NeuralNetworkBtcPredictor predictor = new NeuralNetworkBtcPredictor(5, "input/trainingData.csv");
+/*    public static void main(String[] args) throws IOException{
+        NeuralNetworkBtcPredictor predictor = new NeuralNetworkBtcPredictor(6, "input/trainingData.csv");
         predictor.prepareData();
 
-        System.out.println("Training starting");
-        predictor.trainNetwork();
+       *//* System.out.println("Training starting");
+        predictor.trainNetwork();*//*
 
         System.out.println("Testing network");
         predictor.testNetwork();
 
-    }
+    }*/
 
     public NeuralNetworkBtcPredictor(int slidingWindowSize, String rawDataFilePath) {
         this.slidingWindowSize = slidingWindowSize;
@@ -79,17 +79,15 @@ public class NeuralNetworkBtcPredictor {
         }
     }
 
-    double normalizeValue(double input) {
-        return (input - min) / (max - min) * 0.8 + 0.1;
+    double normalizeValue(double input) {return (input - min) / (max - min) * 0.8 + 0.1;
     }
 
-    double deNormalizeValue(double input) {
-        return min + (input - 0.1) * (max - min) / 0.8;
+    double deNormalizeValue(double input) {return min + (input - 0.1) * (max - min) / 0.8;
     }
 
     void trainNetwork() throws IOException {
         NeuralNetwork<BackPropagation> neuralNetwork =
-                new MultiLayerPerceptron(slidingWindowSize, 2 * slidingWindowSize + 1, 1);
+                new MultiLayerPerceptron(slidingWindowSize, 2  * slidingWindowSize + 1, 1);
 
         int maxIterations = 10000;
         double learningRate = 0.5;
@@ -139,15 +137,16 @@ public class NeuralNetworkBtcPredictor {
     void testNetwork() {
         NeuralNetwork neuralNetwork = NeuralNetwork.createFromFile(neuralNetworkModelFilePath);
         neuralNetwork.setInput(
-                normalizeValue(10456.17),
-                normalizeValue(9830.43),
-                normalizeValue(10149.46),
-                normalizeValue(9682.38),
-                normalizeValue(9586.46));
+                normalizeValue(6844.32),
+                normalizeValue(6926.02),
+                normalizeValue(6816.74),
+                normalizeValue(7049.79),
+                normalizeValue(7417.89),
+                normalizeValue(6789.3));
 
         neuralNetwork.calculate();
         double[] networkOutput = neuralNetwork.getOutput();
-        System.out.println("Expected value  : 10403.19");
+        System.out.println("Expected value  : 6855.4");
         System.out.println("Predicted value : "
                 + deNormalizeValue(networkOutput[0]));
     }
