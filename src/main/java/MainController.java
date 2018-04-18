@@ -23,9 +23,11 @@ public class MainController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        CoinDeskData coinDeskData = new CoinDeskData();
 
+        String filename = coinDeskData.getBpiLast31Days();
 
-        XYChart.Series chartData = prepareData("input/trainingData.csv", "CoinDesk");
+        XYChart.Series chartData = prepareData(filename, "CoinDesk");
 
 
         btcChart.getXAxis().setTickLabelsVisible(false);
@@ -46,8 +48,8 @@ public class MainController implements Initializable {
             String line;
 
             while ((line = reader.readLine()) != null) {
-                String[] tokens = line.split(",");
-                String date = tokens[0].substring(1, 10);
+                String[] tokens = line.split(":");
+                String date = tokens[0].substring(1, 11);
                 if (tokens.length != 1) {
                     series.getData().add(new XYChart.Data(date, Double.valueOf(tokens[1])));
                 }

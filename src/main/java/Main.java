@@ -10,6 +10,9 @@ public class Main extends Application {
         primaryStage.setTitle("Bitcoin Predictor");
         primaryStage.setScene(new Scene(root, 1280, 720));
         primaryStage.show();
+
+
+
     }
 
 
