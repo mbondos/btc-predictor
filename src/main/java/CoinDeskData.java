@@ -32,6 +32,8 @@ public class CoinDeskData {
             connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0");
             reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 
+            stringBuilder.setLength(0);
+
             while ((line = reader.readLine()) != null) {
                 stringBuilder.append(line).append(System.lineSeparator());
             }
