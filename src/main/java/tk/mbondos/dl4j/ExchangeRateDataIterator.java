@@ -1,3 +1,5 @@
+package tk.mbondos.dl4j;
+
 import com.google.common.collect.ImmutableMap;
 import com.opencsv.CSVReader;
 import javafx.util.Pair;

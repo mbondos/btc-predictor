@@ -1,3 +1,5 @@
+package tk.mbondos.dl4j;
+
 public class ExchangeRateData {
     private String date;
     private double open;

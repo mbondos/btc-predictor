@@ -1,3 +1,5 @@
+package tk.mbondos;
+
 import javafx.event.EventHandler;
 import javafx.scene.Cursor;
 import javafx.scene.control.Label;
