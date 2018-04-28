@@ -11,12 +11,12 @@ import java.io.*;
 import java.util.LinkedList;
 
 public class NeuralNetworkBtcPredictor {
-    private int slidingWindowSize;
+    private int slidingWindowSize = 6;
     private double max = 0;
     private double min = Double.MAX_VALUE;
-    private String rawDataFilePath;
+    private String rawDataFilePath = "input/trainingData.csv";
 
-    private String learningDataFilePath = "input/learningData.csv";
+    private String learningDataFilePath = "input/learningDataNotNormalised.csv";
     private String neuralNetworkModelFilePath = "stockPredictor.nnet";
 
 /*    public static void main(String[] args) throws IOException {
@@ -94,14 +94,13 @@ public class NeuralNetworkBtcPredictor {
         }
     }
 
-    double normalizeValue(double input) {
+    private double normalizeValue(double input) {
         validateMinMax();
 
         return (input - min) / (max - min) * 0.8 + 0.1;
-
     }
 
-    double deNormalizeValue(double input) {
+    private double deNormalizeValue(double input) {
         validateMinMax();
         return min + (input - 0.1) * (max - min) / 0.8;
     }
@@ -149,7 +148,7 @@ public class NeuralNetworkBtcPredictor {
         neuralNetwork.save(neuralNetworkModelFilePath);
     }
 
-    DataSet loadTrainingData(String filePath) throws IOException {
+    private DataSet loadTrainingData(String filePath) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
         DataSet trainingSet = new DataSet(slidingWindowSize, 1);
 
@@ -189,10 +188,7 @@ public class NeuralNetworkBtcPredictor {
 
         neuralNetwork.calculate();
         double[] networkOutput = neuralNetwork.getOutput();
-
-        System.out.println(min + " " + max);
-
-        System.out.println(deNormalizeValue(networkOutput[0]));
+        
         return deNormalizeValue(networkOutput[0]);
     }
 

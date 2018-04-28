@@ -24,7 +24,7 @@ public class MainController implements Initializable {
     @FXML
     private NumberAxis yAxis;
 
-    CoinDeskData coinDeskData = new CoinDeskData();
+    private CoinDeskData coinDeskData = new CoinDeskData();
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -41,20 +41,22 @@ public class MainController implements Initializable {
 
         //btcChart.setCreateSymbols(false);
 
+/*        yAxis.setAutoRanging(false);
+        yAxis.setLowerBound(5000);
+        yAxis.setUpperBound(15000);*/
 
-        btcChart.getData().addAll(new XYChart.Series(prepareData(filename, "CoinDesk")), new XYChart.Series(preparePrediction()));
+
+        btcChart.getData().addAll(new XYChart.Series("CoinDesk", prepareData(filename)), new XYChart.Series("Neuroph", preparePrediction()));
 
     }
 
-    private SortedList<XYChart.Data<String, Number>> prepareData(String dataSetPath, String seriesName) {
-        ObservableList<XYChart.Data<String, Number>> data = FXCollections.observableArrayList();
-        SortedList<XYChart.Data<String, Number>> sortedData = new SortedList<>(data, (data1, data2) -> {
+    private SortedList<XYChart.Data<String, Number>> prepareData(String dataSetPath) {
+        ObservableList<XYChart.Data<String, Number>> dataset = FXCollections.observableArrayList();
+        SortedList<XYChart.Data<String, Number>> sortedData = new SortedList<>(dataset, (data1, data2) -> {
             LocalDate date1 = LocalDate.parse(data1.getXValue());
             LocalDate date2 = LocalDate.parse(data2.getXValue());
             return date1.compareTo(date2);
         });
-        XYChart.Series series = new XYChart.Series();
-        series.setName(seriesName);
 
         BufferedReader reader = null;
         try {
@@ -65,7 +67,10 @@ public class MainController implements Initializable {
                 String[] tokens = line.split(":");
                 String date = tokens[0].substring(1, 11);
                 if (tokens.length != 1) {
-                    data.add(new XYChart.Data(date, Double.valueOf(tokens[1])));
+                    final XYChart.Data<String , Number> data = new XYChart.Data<>(date, Double.valueOf(tokens[1]));
+                    data.setNode(
+                            new HoveredThresholdNode(Double.valueOf(tokens[1])));
+                    dataset.add(data);
                 }
             }
         } catch (IOException e) {
@@ -83,7 +88,7 @@ public class MainController implements Initializable {
     }
 
     private SortedList<XYChart.Data<String, Number>> preparePrediction() {
-        SortedList<XYChart.Data<String, Number>> sortedData = prepareData(coinDeskData.getBpiUsingDateRange(LocalDate.now().minusDays(6), LocalDate.now()), "SSN");
+        SortedList<XYChart.Data<String, Number>> sortedData = prepareData(coinDeskData.getBpiUsingDateRange(LocalDate.now().minusDays(6), LocalDate.now()));
         NeuralNetworkBtcPredictor predictor = new NeuralNetworkBtcPredictor();
         double[] inputData = new double[6];
 
@@ -92,10 +97,18 @@ public class MainController implements Initializable {
             inputData[i] = sortedData.get(i).getYValue().doubleValue();
         }
 
-        ObservableList<XYChart.Data<String, Number>> data = FXCollections.observableArrayList();
-        SortedList<XYChart.Data<String, Number>> outputData = new SortedList<>(data);
+        ObservableList<XYChart.Data<String, Number>> dataset = FXCollections.observableArrayList();
+        SortedList<XYChart.Data<String, Number>> outputData = new SortedList<>(dataset);
 
-        data.add(new XYChart.Data(LocalDate.now().toString(), predictor.predict(inputData)));
+
+        double predictedValue = predictor.predict(inputData);
+
+        XYChart.Data<String, Number> data = new XYChart.Data<>(LocalDate.now().toString(), predictedValue);
+        data.setNode(
+                new HoveredThresholdNode(predictedValue));
+
+        dataset.add(data);
+
 
         return outputData;
 
