@@ -1,4 +1,4 @@
-package tk.mbondos;
+package tk.mbondos.neuroph;
 
 import org.neuroph.core.NeuralNetwork;
 import org.neuroph.core.data.DataSet;
@@ -22,7 +22,7 @@ public class NeuralNetworkBtcPredictor {
     private String neuralNetworkModelFilePath = "stockPredictor.nnet";
 
 /*    public static void main(String[] args) throws IOException {
-        tk.mbondos.NeuralNetworkBtcPredictor predictor = new tk.mbondos.NeuralNetworkBtcPredictor(6, "input/trainingData.csv");
+        tk.mbondos.neuroph.NeuralNetworkBtcPredictor predictor = new tk.mbondos.neuroph.NeuralNetworkBtcPredictor(6, "input/trainingData.csv");
         predictor.prepareData();
 
        *//* System.out.println("Training starting");
@@ -41,7 +41,7 @@ public class NeuralNetworkBtcPredictor {
         this.rawDataFilePath = rawDataFilePath;
     }
 
-    void prepareData() throws IOException {
+    public void prepareData() throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(rawDataFilePath));
         try {
             String line;

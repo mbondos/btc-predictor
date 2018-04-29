@@ -1,6 +1,8 @@
 package tk.mbondos.dl4j;
 
-public class ExchangeRateData {
+import java.time.LocalDate;
+
+public class ExchangeRateData implements Comparable<ExchangeRateData>{
     private String date;
     private double open;
     private double high;
@@ -56,5 +58,18 @@ public class ExchangeRateData {
 
     public void setClose(double close) {
         this.close = close;
+    }
+
+    @Override
+    public int compareTo(ExchangeRateData data) {
+        LocalDate date1 = LocalDate.parse(getDate());
+        LocalDate date2 = LocalDate.parse(data.getDate());
+
+        return date1.compareTo(date2);
+    }
+
+    @Override
+    public String toString() {
+        return date  + "," +  open  + "," +  high  + "," +  low  + "," +  close;
     }
 }

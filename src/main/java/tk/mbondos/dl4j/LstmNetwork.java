@@ -16,16 +16,14 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 
 public class LstmNetwork {
-    private static final double learningRate = 0.01;
+    private static final double learningRate = 0.05;
     private static final int iterations = 1;
     private static final int seed = 12345;
-
     private static final int lstmLayer1Size = 256;
     private static final int lstmLayer2Size = 256;
     private static final int denseLayerSize = 32;
     private static final double dropoutRatio = 0.2;
-    private static final int truncatedBPTTLength = 22;
-
+    private static final int truncatedBPTTLength = 31;
 
         public static MultiLayerNetwork buildLstmNetwork(int nIn, int nOut) {
             MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()

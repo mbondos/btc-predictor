@@ -8,6 +8,7 @@ import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.DataSetPreProcessor;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.io.ClassPathResource;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -40,49 +41,62 @@ public class ExchangeRateDataIterator implements DataSetIterator {
         this.exampleLength = exampleLength;
         this.category = category;
         int split = (int) Math.round(exchangeRateData.size() * splitRatio);
-        train = exchangeRateData.subList(0, split);
+        int split2 = (int) Math.round(exchangeRateData.size() * 0.2);
+        train = exchangeRateData.subList(split2, split);
         test = generateTestDataSet(exchangeRateData.subList(split, exchangeRateData.size()));
         initializeOffsets();
     }
 
-    private List<Pair<INDArray, INDArray>> generateTestDataSet(List<ExchangeRateData> exchangeRateDataList) {
+    public ExchangeRateDataIterator(String filename, int miniBatchSize, int exampleLength, PriceCategory category) {
+        List<ExchangeRateData> exchangeRateData = readDataFromFile(filename);
+        System.out.println("dlugos: " + exchangeRateData.size());
+        this.miniBatchSize = miniBatchSize;
+        this.exampleLength = exampleLength;
+        this.category = category;
+        test = generateTestDataSet(exchangeRateData);
+
+        // initializeOffsets();
+    }
+
+    public List<Pair<INDArray, INDArray>> generateTestDataSet(List<ExchangeRateData> exchangeRateDataList) {
         int window = exampleLength + predictLength;
         List<Pair<INDArray, INDArray>> test = new ArrayList<>();
         for (int i = 0; i < exchangeRateDataList.size() - window; i++) {
-            INDArray input = Nd4j.create(new int[] {exampleLength, VECTOR_SIZE}, 'f');
-            for (int j = i; j < i + exampleLength; j++) {
-                ExchangeRateData data = exchangeRateDataList.get(j);
-                input.putScalar(new int[] {j - i, 0}, (data.getOpen() - minArray[0]) / (maxArray[0] - minArray[0]));
-                input.putScalar(new int[] {j - i, 1}, (data.getHigh() - minArray[1]) / (maxArray[1] - minArray[1]));
-                input.putScalar(new int[] {j - i, 2}, (data.getLow() - minArray[2]) / (maxArray[2] - minArray[2]));
-                input.putScalar(new int[] {j - i, 3}, (data.getClose() - minArray[3]) / (maxArray[3] - minArray[3]));
-            }
+            INDArray input = Nd4j.create(new int[]{exampleLength, VECTOR_SIZE}, 'f');
+            populateInputArray(exchangeRateDataList, i, input);
             ExchangeRateData data = exchangeRateDataList.get(i + exampleLength);
-            INDArray label;
+            INDArray label = Nd4j.create(new int[]{1}, 'f');
 
-            if (category.equals(PriceCategory.ALL)) {
-                label = Nd4j.create(new int[]{VECTOR_SIZE}, 'f'); // ordering is set as 'f', faster construct
-                label.putScalar(new int[] {0}, data.getOpen());
-                label.putScalar(new int[] {1}, data.getHigh());
-                label.putScalar(new int[] {2}, data.getLow());
-                label.putScalar(new int[] {3}, data.getClose());
+            label.putScalar(new int[]{0}, data.getClose());
 
-            } else {
-                label = Nd4j.create(new int[] {1}, 'f');
-                switch (category) {
-                    case OPEN: label.putScalar(new int[] {0}, data.getOpen()); break;
-                    case HIGH: label.putScalar(new int[] {0}, data.getHigh()); break;
-                    case LOW: label.putScalar(new int[] {0}, data.getLow()); break;
-                    case CLOSE: label.putScalar(new int[] {0}, data.getClose()); break;
-                    default: throw new NoSuchElementException();
-                }
-            }
+
             test.add(new Pair<>(input, label));
         }
         return test;
     }
 
-    private List<ExchangeRateData> readDataFromFile(String filename) {
+    public INDArray getInputData(String fileName) {
+        List<ExchangeRateData> exchangeRateData = readDataFromFileNoMinMax(fileName);
+        INDArray input = null;
+        for (int i = 0; i <= exchangeRateData.size() - exampleLength; i++) {
+            input = Nd4j.create(new int[]{exampleLength, VECTOR_SIZE}, 'f');
+            populateInputArray(exchangeRateData, i, input);
+        }
+
+        return input;
+    }
+
+    private void populateInputArray(List<ExchangeRateData> exchangeRateData, int i, INDArray input) {
+        for (int j = i; j < i + exampleLength; j++) {
+            ExchangeRateData data = exchangeRateData.get(j);
+            input.putScalar(new int[]{j - i, 0}, (data.getOpen() - minArray[0]) / (maxArray[0] - minArray[0])* 0.8 + 0.1);
+            input.putScalar(new int[]{j - i, 1}, (data.getHigh() - minArray[1]) / (maxArray[1] - minArray[1])* 0.8 + 0.1);
+            input.putScalar(new int[]{j - i, 2}, (data.getLow() - minArray[2]) / (maxArray[2] - minArray[2])* 0.8 + 0.1);
+            input.putScalar(new int[]{j - i, 3}, (data.getClose() - minArray[3]) / (maxArray[3] - minArray[3])* 0.8 + 0.1);
+        }
+    }
+
+    public List<ExchangeRateData> readDataFromFile(String filename) {
         List<ExchangeRateData> exchangeRateDataList = new ArrayList<>();
 
         try {
@@ -91,7 +105,7 @@ public class ExchangeRateDataIterator implements DataSetIterator {
                 minArray[i] = Double.MAX_VALUE;
             }
             List<String[]> list = new CSVReader(new FileReader(filename)).readAll();
-            for (String[] arr: list) {
+            for (String[] arr : list) {
                 double[] nums = new double[VECTOR_SIZE];
                 for (int i = 0; i < arr.length - 1; i++) {
                     nums[i] = Double.valueOf(arr[i + 1]);
@@ -103,6 +117,27 @@ public class ExchangeRateDataIterator implements DataSetIterator {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        Collections.sort(exchangeRateDataList);
+        return exchangeRateDataList;
+    }
+
+    public List<ExchangeRateData> readDataFromFileNoMinMax(String filename) {
+        List<ExchangeRateData> exchangeRateDataList = new ArrayList<>();
+
+        try {
+
+            List<String[]> list = new CSVReader(new FileReader(filename)).readAll();
+            for (String[] arr : list) {
+                double[] nums = new double[VECTOR_SIZE];
+                for (int i = 0; i < arr.length - 1; i++) {
+                    nums[i] = Double.valueOf(arr[i + 1]);
+                }
+                exchangeRateDataList.add(new ExchangeRateData(arr[0], nums[0], nums[1], nums[2], nums[3]));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Collections.sort(exchangeRateDataList);
         return exchangeRateDataList;
     }
 
@@ -126,19 +161,20 @@ public class ExchangeRateDataIterator implements DataSetIterator {
         return test;
     }
 
-    public double getMaxNum (PriceCategory category) { return maxArray[featureMapIndex.get(category)]; }
+    public double getMaxNum(PriceCategory category) {
+        return maxArray[featureMapIndex.get(category)];
+    }
 
-    public double getMinNum (PriceCategory category) { return minArray[featureMapIndex.get(category)]; }
+    public double getMinNum(PriceCategory category) {
+        return minArray[featureMapIndex.get(category)];
+    }
 
     @Override
     public DataSet next(int num) {
         if (exampleStartOffsets.size() == 0) throw new NoSuchElementException();
         int actualMiniBatchSize = Math.min(num, exampleStartOffsets.size());
-        INDArray input = Nd4j.create(new int[] {actualMiniBatchSize, VECTOR_SIZE, exampleLength}, 'f');
-        INDArray label;
-
-        if (category.equals(PriceCategory.ALL)) label = Nd4j.create(new int[] {actualMiniBatchSize, VECTOR_SIZE, exampleLength}, 'f');
-        else label = Nd4j.create(new int[] {actualMiniBatchSize, predictLength, exampleLength}, 'f');
+        INDArray input = Nd4j.create(new int[]{actualMiniBatchSize, VECTOR_SIZE, exampleLength}, 'f');
+        INDArray label = Nd4j.create(new int[]{actualMiniBatchSize, predictLength, exampleLength}, 'f');
 
         for (int index = 0; index < actualMiniBatchSize; index++) {
             int startIdx = exampleStartOffsets.removeFirst();
@@ -147,19 +183,14 @@ public class ExchangeRateDataIterator implements DataSetIterator {
             ExchangeRateData nextData;
             for (int i = startIdx; i < endIdx; i++) {
                 int c = i - startIdx;
-                input.putScalar(new int[] {index, 0, c}, (curData.getOpen() - minArray[0]) / (maxArray[0] - minArray[0]));
-                input.putScalar(new int[] {index, 1, c}, (curData.getHigh() - minArray[1]) / (maxArray[1] - minArray[1]));
-                input.putScalar(new int[] {index, 2, c}, (curData.getLow() - minArray[2]) / (maxArray[2] - minArray[2]));
-                input.putScalar(new int[] {index, 3, c}, (curData.getClose() - minArray[3]) / (maxArray[3] - minArray[3]));
+                input.putScalar(new int[]{index, 0, c}, (curData.getOpen() - minArray[0]) / (maxArray[0] - minArray[0]));
+                input.putScalar(new int[]{index, 1, c}, (curData.getHigh() - minArray[1]) / (maxArray[1] - minArray[1]));
+                input.putScalar(new int[]{index, 2, c}, (curData.getLow() - minArray[2]) / (maxArray[2] - minArray[2]));
+                input.putScalar(new int[]{index, 3, c}, (curData.getClose() - minArray[3]) / (maxArray[3] - minArray[3]));
                 nextData = train.get(i + 1);
-                if (category.equals(PriceCategory.ALL)) {
-                    label.putScalar(new int[] {index, 0, c}, (nextData.getOpen() - minArray[1]) / (maxArray[1] - minArray[1]));
-                    label.putScalar(new int[] {index, 1, c}, (nextData.getHigh() - minArray[2]) / (maxArray[2] - minArray[2]));
-                    label.putScalar(new int[] {index, 2, c}, (nextData.getLow() - minArray[2]) / (maxArray[2] - minArray[2]));
-                    label.putScalar(new int[] {index, 3, c}, (nextData.getClose() - minArray[3]) / (maxArray[3] - minArray[3]));
-                } else {
-                    label.putScalar(new int[]{index, 0, c}, feedLabel(nextData));
-                }
+
+                label.putScalar(new int[]{index, 0, c}, feedLabel(nextData));
+
                 curData = nextData;
             }
             if (exampleStartOffsets.size() == 0) break;
@@ -170,11 +201,20 @@ public class ExchangeRateDataIterator implements DataSetIterator {
     private double feedLabel(ExchangeRateData data) {
         double value;
         switch (category) {
-            case OPEN: value = (data.getOpen() - minArray[0]) / (maxArray[0] - minArray[0]); break;
-            case HIGH: value = (data.getHigh() - minArray[1]) / (maxArray[1] - minArray[1]); break;
-            case LOW: value = (data.getLow() - minArray[2]) / (maxArray[2] - minArray[2]); break;
-            case CLOSE: value = (data.getClose() - minArray[3]) / (maxArray[3] - minArray[3]); break;
-            default: throw new NoSuchElementException();
+            case OPEN:
+                value = (data.getOpen() - minArray[0]) / (maxArray[0] - minArray[0]);
+                break;
+            case HIGH:
+                value = (data.getHigh() - minArray[1]) / (maxArray[1] - minArray[1]);
+                break;
+            case LOW:
+                value = (data.getLow() - minArray[2]) / (maxArray[2] - minArray[2]);
+                break;
+            case CLOSE:
+                value = (data.getClose() - minArray[3]) / (maxArray[3] - minArray[3]);
+                break;
+            default:
+                throw new NoSuchElementException();
         }
         return value;
     }
