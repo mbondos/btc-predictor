@@ -70,7 +70,7 @@ public class MainController implements Initializable {
                 if (tokens.length != 1) {
                     final XYChart.Data<String , Number> data = new XYChart.Data<>(date, Double.valueOf(tokens[1]));
                     data.setNode(
-                            new HoveredThresholdNode(Double.valueOf(tokens[1])));
+                            new HoveredThresholdNode(Double.valueOf(tokens[1]), 0));
                     dataset.add(data);
                 }
             }
@@ -106,7 +106,7 @@ public class MainController implements Initializable {
 
         XYChart.Data<String, Number> data = new XYChart.Data<>(LocalDate.now().toString(), predictedValue);
         data.setNode(
-                new HoveredThresholdNode(predictedValue));
+                new HoveredThresholdNode(predictedValue, 1));
 
         dataset.add(data);
 
@@ -132,7 +132,7 @@ public class MainController implements Initializable {
 
         XYChart.Data<String, Number> data = new XYChart.Data<>(LocalDate.now().toString(), predictedValue);
         data.setNode(
-                new HoveredThresholdNode(predictedValue));
+                new HoveredThresholdNode(predictedValue, 2));
 
         dataset.add(data);
         return outputData;

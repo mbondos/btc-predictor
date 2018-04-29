@@ -20,7 +20,7 @@ public class LstmPredictor {
     private String file = new ClassPathResource("ohlc.csv").getFile().getAbsolutePath();
     private int batchSize = 64;
 
-    private double splitRatio = 1;
+    private double splitRatio = 1; // Ratio of train to test data. Use 1 for 100% train data.
     private int epochs = 100;
     private PriceCategory category = PriceCategory.CLOSE;
     private File locationToSave = new File("StockPriceLSTM_".concat(String.valueOf(category)).concat(".zip"));

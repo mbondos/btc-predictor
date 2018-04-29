@@ -5,10 +5,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import tk.mbondos.dl4j.LstmPredictor;
-import tk.mbondos.neuroph.NeuralNetworkBtcPredictor;
-
-import java.time.LocalDate;
 
 public class Main extends Application {
 

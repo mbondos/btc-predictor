@@ -10,10 +10,10 @@ import java.text.DecimalFormat;
 
 
 class HoveredThresholdNode extends StackPane {
-    HoveredThresholdNode(Number value) {
+    HoveredThresholdNode(Number value, int colorValue) {
         setPrefSize(15, 15);
 
-        final Label label = createDataThresholdLabel(value);
+        final Label label = createDataThresholdLabel(value, colorValue);
 
         setOnMouseEntered(new EventHandler<MouseEvent>() {
             @Override public void handle(MouseEvent mouseEvent) {
@@ -30,10 +30,10 @@ class HoveredThresholdNode extends StackPane {
         });
     }
 
-    private Label createDataThresholdLabel(Number value) {
+    private Label createDataThresholdLabel(Number value, int colorValue) {
         DecimalFormat df= new DecimalFormat("####0.00");
         final Label label = new Label(df.format(value) + "");
-        label.getStyleClass().addAll( "default-color7","chart-line-symbol", "chart-series-line");
+        label.getStyleClass().addAll( "default-color" + colorValue,"chart-line-symbol", "chart-series-line");
 
       /*  label.setStyle("-fx-font-size: 20; -fx-font-weight: bold;");*/
 
