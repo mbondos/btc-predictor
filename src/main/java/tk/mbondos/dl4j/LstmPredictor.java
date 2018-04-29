@@ -61,12 +61,12 @@ public class LstmPredictor {
 */
 
         log.info("Done...");
-        predictOne();
+
 
 
     }
 
-    public void predictOne() throws IOException {
+    public double predictOne() throws IOException {
         String fileName = new ClassPathResource(coinDeskData.getOhlcPriceDateRange(LocalDate.now().minusDays(exampleLength), LocalDate.now())).getFile().getAbsolutePath();
 
         MultiLayerNetwork network = ModelSerializer.restoreMultiLayerNetwork("src/main/resources/StockPriceLSTM_CLOSE.zip");
@@ -87,8 +87,7 @@ public class LstmPredictor {
         System.out.println(iterator.getInputData(fileName));
         log.info("prediction normalized: {}", predictionNormalized);
 
-
-
+        return predictionNormalized;
     }
 
     private void predictPriceOneAhead(MultiLayerNetwork net, List<Pair<INDArray, INDArray>> testData, double max, double min, PriceCategory category) {

@@ -9,6 +9,7 @@ import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
+import org.nd4j.linalg.io.ClassPathResource;
 import tk.mbondos.dl4j.LstmPredictor;
 import tk.mbondos.neuroph.NeuralNetworkBtcPredictor;
 import java.io.BufferedReader;
@@ -42,7 +43,11 @@ public class MainController implements Initializable {
         coinDeskData.getOhlcPriceLast31Days();
 
 
-        btcChart.getData().addAll(new XYChart.Series("CoinDesk", prepareData(filename)), new XYChart.Series("Neuroph", preparePredictionNeuroph()));
+        btcChart.getData().addAll(
+                new XYChart.Series("CoinDesk", prepareData(filename)),
+                new XYChart.Series("Neuroph", preparePredictionNeuroph()),
+                new XYChart.Series("Dl4j", preparePredictionDl4j())
+        );
 
     }
 
@@ -56,7 +61,7 @@ public class MainController implements Initializable {
 
         BufferedReader reader = null;
         try {
-            reader = new BufferedReader(new FileReader(dataSetPath));
+            reader = new BufferedReader(new FileReader(new ClassPathResource(dataSetPath).getFile()));
             String line;
 
             while ((line = reader.readLine()) != null) {
@@ -113,28 +118,23 @@ public class MainController implements Initializable {
     private SortedList<XYChart.Data<String, Number>> preparePredictionDl4j() {
         SortedList<XYChart.Data<String, Number>> sortedData = prepareData(coinDeskData.getClosePriceDateRange(LocalDate.now().minusDays(6), LocalDate.now()));
         LstmPredictor predictor = null;
+        double predictedValue = 0;
         try {
             predictor = new LstmPredictor();
+            predictedValue = predictor.predictOne();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        double[] inputData = new double[6];
-
 
         ObservableList<XYChart.Data<String, Number>> dataset = FXCollections.observableArrayList();
         SortedList<XYChart.Data<String, Number>> outputData = new SortedList<>(dataset);
 
-
-        double predictedValue =
 
         XYChart.Data<String, Number> data = new XYChart.Data<>(LocalDate.now().toString(), predictedValue);
         data.setNode(
                 new HoveredThresholdNode(predictedValue));
 
         dataset.add(data);
-
-
         return outputData;
-
     }
 }

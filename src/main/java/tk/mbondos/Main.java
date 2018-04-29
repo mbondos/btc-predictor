@@ -18,13 +18,6 @@ public class Main extends Application {
         primaryStage.setScene(new Scene(root, 1280, 720));
         primaryStage.show();
 
-       /* NeuralNetworkBtcPredictor nn = new tk.mbondos.neuroph.NeuralNetworkBtcPredictor();
-        nn.prepareData();*/
-
-
-        LstmPredictor predictor = new LstmPredictor();
-
-        predictor.trainAndTest();
 
     }
 
