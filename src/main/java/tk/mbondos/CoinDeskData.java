@@ -13,8 +13,6 @@ import java.util.Collections;
 import java.util.List;
 
 public class CoinDeskData {
-    private HttpsURLConnection connection;
-    private BufferedReader reader;
     private StringBuilder stringBuilder;
     private URL url;
 
@@ -33,11 +31,11 @@ public class CoinDeskData {
     private void getBpi(URL url) {
         String line;
         try {
-            connection = (HttpsURLConnection) url.openConnection();
+            HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setReadTimeout(0);
             connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0");
-            reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 
             stringBuilder.setLength(0);
 
@@ -88,7 +86,6 @@ public class CoinDeskData {
         setUrl(String.format("%s?start=%s&end=%s", "https://api.coindesk.com/v1/bpi/historical/ohlc.json", LocalDate.of(2010, 7, 19), LocalDate.now()));
         getBpi(this.url);
         String filename = "data/btc_ohlc_lifetime.csv";
-        System.out.println(getResponse());
         writeOhlcDataToFile(filename);
         return filename;
     }
@@ -97,7 +94,6 @@ public class CoinDeskData {
         setUrl(String.format("%s?start=%s&end=%s", "https://api.coindesk.com/v1/bpi/historical/ohlc.json", startDate, endDate));
         getBpi(this.url);
         String filename = "data/btc_ohlc_range.csv";
-        System.out.println(getResponse());
         writeOhlcDataToFile(filename);
         return filename;
     }
@@ -161,8 +157,6 @@ public class CoinDeskData {
                 }
                 //format : date, open, high, low, close
                 data.add(new ExchangeRateData(date, priceArray[3], priceArray[0],  priceArray[1], priceArray[2]));
-               /* bufferedWriter.write("\"" + date + "\"," + priceArray[3] + "," + priceArray[0] + "," + priceArray[1] + "," + priceArray[2]);
-                bufferedWriter.newLine();*/
             }
             Collections.sort(data);
             for (ExchangeRateData line : data) {

@@ -8,6 +8,7 @@ import org.nd4j.linalg.io.ClassPathResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tk.mbondos.CoinDeskData;
+import tk.mbondos.util.Normalizer;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,14 +17,14 @@ import java.util.List;
 
 public class LstmPredictor {
     private static final Logger log = LoggerFactory.getLogger(LstmPredictor.class);
-    private int exampleLength = 6;
+    private int exampleLength = 24;
     private String file = new ClassPathResource("ohlc.csv").getFile().getAbsolutePath();
     private int batchSize = 64;
 
     private double splitRatio = 1; // Ratio of train to test data. Use 1 for 100% train data.
     private int epochs = 100;
     private PriceCategory category = PriceCategory.CLOSE;
-    private File locationToSave = new File("StockPriceLSTM_".concat(String.valueOf(category)).concat(".zip"));
+    private File networkFileLocation = new File("src/main/resources/StockPriceLSTM_CLOSE.zip");
 
 
     private ExchangeRateDataIterator iterator = new ExchangeRateDataIterator(file, batchSize, exampleLength, splitRatio, category);
@@ -36,7 +37,6 @@ public class LstmPredictor {
     }
 
     public void trainAndTest() throws IOException {
-/*
         log.info("Training...");
         for (int i = 0; i < epochs; i++) {
             while (iterator.hasNext()) {
@@ -47,29 +47,25 @@ public class LstmPredictor {
         }
         log.info("Saving model...");
 
-        ModelSerializer.writeModel(network, locationToSave, true);*/
+        ModelSerializer.writeModel(network, networkFileLocation, true);
 
-/*
         log.info("Load model...");
-        network = ModelSerializer.restoreMultiLayerNetwork(locationToSave);
+        network = ModelSerializer.restoreMultiLayerNetwork(networkFileLocation);
 
         log.info("Testing...");
         List<Pair<INDArray, INDArray>> test = iterator.getTestDataSet();
         double max = iterator.getMaxNum(category);
         double min = iterator.getMinNum(category);
         predictPriceOneAhead(network, test, max, min, category);
-*/
 
         log.info("Done...");
-
-
-
     }
 
     public double predictOne() throws IOException {
         String fileName = new ClassPathResource(coinDeskData.getOhlcPriceDateRange(LocalDate.now().minusDays(exampleLength), LocalDate.now())).getFile().getAbsolutePath();
 
-        MultiLayerNetwork network = ModelSerializer.restoreMultiLayerNetwork("src/main/resources/StockPriceLSTM_CLOSE.zip");
+        MultiLayerNetwork network =
+                ModelSerializer.restoreMultiLayerNetwork(networkFileLocation);
 
         double max = iterator.getMaxNum(category);
         double min = iterator.getMinNum(category);
@@ -78,17 +74,46 @@ public class LstmPredictor {
 
         INDArray array = iterator.getInputData(fileName);
 
-        System.out.println(array.length());
         double prediction = network.rnnTimeStep(array).getDouble(exampleLength - 1);
         log.info("prediction {}", prediction);
-        double predictionNormalized = min + ( prediction - 0.1 ) * (max - min)  / 0.8;
+        double predictionNormalized = Normalizer.deNormalizeValue(prediction, min, max);
 
-        System.out.println("input data");
-        System.out.println(iterator.getInputData(fileName));
         log.info("prediction normalized: {}", predictionNormalized);
 
         return predictionNormalized;
     }
+
+    public double[] predictSeries(int seriesLength) throws IOException {
+        double[] output = new double[seriesLength];
+
+        String fileName = new ClassPathResource(
+                coinDeskData.getOhlcPriceDateRange(
+                        LocalDate.now().minusDays(seriesLength + exampleLength - 1),
+                        LocalDate.now().minusDays(seriesLength))).getFile().getAbsolutePath();
+
+        MultiLayerNetwork network =
+                ModelSerializer.restoreMultiLayerNetwork(networkFileLocation);
+
+        double max = iterator.getMaxNum(category);
+        double min = iterator.getMinNum(category);
+        log.info("max : {}", max);
+        log.info("min : {}", min);
+
+        INDArray array = iterator.getInputData(fileName);
+
+        for (int i = 0; i < seriesLength; i++) {
+            output[i] = Normalizer.deNormalizeValue(
+                    network.rnnTimeStep(array).getDouble(exampleLength - 1),
+                    min,
+                    max
+            );
+            log.info("Predicted: {}", output[i]++);
+        }
+
+        return output;
+    }
+
+
 
     private void predictPriceOneAhead(MultiLayerNetwork net, List<Pair<INDArray, INDArray>> testData, double max, double min, PriceCategory category) {
         double[] predicts = new double[testData.size()];

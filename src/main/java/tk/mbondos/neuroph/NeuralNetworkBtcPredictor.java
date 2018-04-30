@@ -16,22 +16,10 @@ public class NeuralNetworkBtcPredictor {
     private int slidingWindowSize = 6;
     private double max = 0;
     private double min = Double.MAX_VALUE;
+
     private String rawDataFilePath = "input/trainingData.csv";
-
     private String learningDataFilePath = "input/learningDataNotNormalised.csv";
-    private String neuralNetworkModelFilePath = "stockPredictor.nnet";
-
-/*    public static void main(String[] args) throws IOException {
-        tk.mbondos.neuroph.NeuralNetworkBtcPredictor predictor = new tk.mbondos.neuroph.NeuralNetworkBtcPredictor(6, "input/trainingData.csv");
-        predictor.prepareData();
-
-       *//* System.out.println("Training starting");
-        predictor.trainNetwork();*//*
-
-        System.out.println("Testing network");
-        predictor.testNetwork();
-
-    }*/
+    private String neuralNetworkModelFilePath = "src/main/resources/stockPredictor.nnet";
 
     public NeuralNetworkBtcPredictor() {
     }
@@ -176,10 +164,9 @@ public class NeuralNetworkBtcPredictor {
 
     public double predict(double[] inputData) {
         NeuralNetwork neuralNetwork = NeuralNetwork.createFromFile(neuralNetworkModelFilePath);
-        if (inputData.length != 6) {
-            throw new IllegalArgumentException("Must be exactly 6 entries.");
+        if (inputData.length != slidingWindowSize) {
+            throw new IllegalArgumentException("Length of array must be exactly " + slidingWindowSize + ".(Same as slidingWindowsSize)");
         }
-
         double[] normalizedInput = new double[6];
 
         for (int i = 0; i < inputData.length; i++) {
@@ -192,6 +179,27 @@ public class NeuralNetworkBtcPredictor {
         double[] networkOutput = neuralNetwork.getOutput();
         
         return deNormalizeValue(networkOutput[0]);
+    }
+
+    public double[] predictSeries(double[] inputData, int seriesLength) {
+        double[] output = new double[seriesLength];
+        for (int i = 0; i < seriesLength; i++) {
+            output[i] = predict(inputData);
+            inputData = shiftLeft(inputData);
+            inputData[slidingWindowSize - 1] = output[i];
+        }
+
+        return output;
+    }
+
+    public double[] shiftLeft(double[] nums) {
+        if (nums == null || nums.length <= 1) {
+            return nums;
+        }
+        double start = nums[0];
+        System.arraycopy(nums, 1, nums, 0, nums.length - 1);
+        nums[nums.length - 1] = start;
+        return nums;
     }
 
     void testNetwork() {

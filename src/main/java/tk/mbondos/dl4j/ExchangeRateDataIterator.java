@@ -9,6 +9,7 @@ import org.nd4j.linalg.dataset.api.DataSetPreProcessor;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.io.ClassPathResource;
+import tk.mbondos.util.Normalizer;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -41,24 +42,12 @@ public class ExchangeRateDataIterator implements DataSetIterator {
         this.exampleLength = exampleLength;
         this.category = category;
         int split = (int) Math.round(exchangeRateData.size() * splitRatio);
-        int split2 = (int) Math.round(exchangeRateData.size() * 0.2);
-        train = exchangeRateData.subList(split2, split);
+        train = exchangeRateData.subList(0, split);
         test = generateTestDataSet(exchangeRateData.subList(split, exchangeRateData.size()));
         initializeOffsets();
     }
 
-    public ExchangeRateDataIterator(String filename, int miniBatchSize, int exampleLength, PriceCategory category) {
-        List<ExchangeRateData> exchangeRateData = readDataFromFile(filename);
-        System.out.println("dlugos: " + exchangeRateData.size());
-        this.miniBatchSize = miniBatchSize;
-        this.exampleLength = exampleLength;
-        this.category = category;
-        test = generateTestDataSet(exchangeRateData);
-
-        // initializeOffsets();
-    }
-
-    public List<Pair<INDArray, INDArray>> generateTestDataSet(List<ExchangeRateData> exchangeRateDataList) {
+    private List<Pair<INDArray, INDArray>> generateTestDataSet(List<ExchangeRateData> exchangeRateDataList) {
         int window = exampleLength + predictLength;
         List<Pair<INDArray, INDArray>> test = new ArrayList<>();
         for (int i = 0; i < exchangeRateDataList.size() - window; i++) {
@@ -89,10 +78,10 @@ public class ExchangeRateDataIterator implements DataSetIterator {
     private void populateInputArray(List<ExchangeRateData> exchangeRateData, int i, INDArray input) {
         for (int j = i; j < i + exampleLength; j++) {
             ExchangeRateData data = exchangeRateData.get(j);
-            input.putScalar(new int[]{j - i, 0}, (data.getOpen() - minArray[0]) / (maxArray[0] - minArray[0])* 0.8 + 0.1);
-            input.putScalar(new int[]{j - i, 1}, (data.getHigh() - minArray[1]) / (maxArray[1] - minArray[1])* 0.8 + 0.1);
-            input.putScalar(new int[]{j - i, 2}, (data.getLow() - minArray[2]) / (maxArray[2] - minArray[2])* 0.8 + 0.1);
-            input.putScalar(new int[]{j - i, 3}, (data.getClose() - minArray[3]) / (maxArray[3] - minArray[3])* 0.8 + 0.1);
+            input.putScalar(new int[]{j - i, 0}, (Normalizer.normalizeValue(data.getOpen(),minArray[0],maxArray[0])));
+            input.putScalar(new int[]{j - i, 1}, (Normalizer.normalizeValue(data.getHigh(),minArray[1],maxArray[1])));
+            input.putScalar(new int[]{j - i, 2}, (Normalizer.normalizeValue(data.getLow(),minArray[2],maxArray[2])));
+            input.putScalar(new int[]{j - i, 3}, (Normalizer.normalizeValue(data.getClose(),minArray[3],maxArray[3])));
         }
     }
 
@@ -183,10 +172,11 @@ public class ExchangeRateDataIterator implements DataSetIterator {
             ExchangeRateData nextData;
             for (int i = startIdx; i < endIdx; i++) {
                 int c = i - startIdx;
-                input.putScalar(new int[]{index, 0, c}, (curData.getOpen() - minArray[0]) / (maxArray[0] - minArray[0]));
-                input.putScalar(new int[]{index, 1, c}, (curData.getHigh() - minArray[1]) / (maxArray[1] - minArray[1]));
-                input.putScalar(new int[]{index, 2, c}, (curData.getLow() - minArray[2]) / (maxArray[2] - minArray[2]));
-                input.putScalar(new int[]{index, 3, c}, (curData.getClose() - minArray[3]) / (maxArray[3] - minArray[3]));
+                input.putScalar(new int[]{index, 0, c}, (Normalizer.normalizeValue(curData.getOpen(),minArray[0],maxArray[0])));
+                input.putScalar(new int[]{index, 1, c}, (Normalizer.normalizeValue(curData.getHigh(),minArray[1],maxArray[1])));
+                input.putScalar(new int[]{index, 2, c}, (Normalizer.normalizeValue(curData.getLow(),minArray[2],maxArray[2])));
+                input.putScalar(new int[]{index, 3, c}, (Normalizer.normalizeValue(curData.getClose(),minArray[3],maxArray[3])));
+
                 nextData = train.get(i + 1);
 
                 label.putScalar(new int[]{index, 0, c}, feedLabel(nextData));
@@ -202,16 +192,16 @@ public class ExchangeRateDataIterator implements DataSetIterator {
         double value;
         switch (category) {
             case OPEN:
-                value = (data.getOpen() - minArray[0]) / (maxArray[0] - minArray[0]);
+                value = (Normalizer.normalizeValue(data.getOpen(),minArray[0],maxArray[0]));
                 break;
             case HIGH:
-                value = (data.getHigh() - minArray[1]) / (maxArray[1] - minArray[1]);
+                value = (Normalizer.normalizeValue(data.getHigh(),minArray[1],maxArray[1]));
                 break;
             case LOW:
-                value = (data.getLow() - minArray[2]) / (maxArray[2] - minArray[2]);
+                value = (Normalizer.normalizeValue(data.getLow(),minArray[2],maxArray[2]));
                 break;
             case CLOSE:
-                value = (data.getClose() - minArray[3]) / (maxArray[3] - minArray[3]);
+                value = (Normalizer.normalizeValue(data.getClose(),minArray[3],maxArray[3]));
                 break;
             default:
                 throw new NoSuchElementException();

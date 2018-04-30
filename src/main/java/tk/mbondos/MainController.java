@@ -39,9 +39,7 @@ public class MainController implements Initializable {
        /* btcChart.getXAxis().setTickLabelsVisible(false);
         btcChart.getXAxis().setOpacity(0);*/
 
-        //btcChart.setCreateSymbols(false);
-        coinDeskData.getOhlcPriceLast31Days();
-
+        coinDeskData.getOhlcPriceDateRange(LocalDate.of(2016,01,01),LocalDate.now());
 
         btcChart.getData().addAll(
                 new XYChart.Series("CoinDesk", prepareData(filename)),
@@ -89,26 +87,30 @@ public class MainController implements Initializable {
     }
 
     private SortedList<XYChart.Data<String, Number>> preparePredictionNeuroph() {
-        SortedList<XYChart.Data<String, Number>> sortedData = prepareData(coinDeskData.getClosePriceDateRange(LocalDate.now().minusDays(6), LocalDate.now()));
+        int seriesLength = 31;
+        SortedList<XYChart.Data<String, Number>> sortedData = prepareData(coinDeskData.getClosePriceDateRange(LocalDate.now().minusDays(seriesLength + 5), LocalDate.now().minusDays(seriesLength)));
         NeuralNetworkBtcPredictor predictor = new NeuralNetworkBtcPredictor();
         double[] inputData = new double[6];
 
 
         for (int i = 0; i < sortedData.size(); i++) {
             inputData[i] = sortedData.get(i).getYValue().doubleValue();
+            System.out.println(inputData[i]);
         }
+        double[] predictSeries = predictor.predictSeries(inputData,seriesLength);
 
         ObservableList<XYChart.Data<String, Number>> dataset = FXCollections.observableArrayList();
         SortedList<XYChart.Data<String, Number>> outputData = new SortedList<>(dataset);
+        LocalDate startingDate = LocalDate.now().minusDays(seriesLength);
+
+        for (int i = 0; i < predictSeries.length; i++) {
+            XYChart.Data<String, Number> data = new XYChart.Data<>(startingDate.plusDays(i).toString(), predictSeries[i]);
+            data.setNode(
+                    new HoveredThresholdNode(predictSeries[i], 1));
+            dataset.add(data);
+        }
 
 
-        double predictedValue = predictor.predict(inputData);
-
-        XYChart.Data<String, Number> data = new XYChart.Data<>(LocalDate.now().toString(), predictedValue);
-        data.setNode(
-                new HoveredThresholdNode(predictedValue, 1));
-
-        dataset.add(data);
 
 
         return outputData;
@@ -116,12 +118,13 @@ public class MainController implements Initializable {
     }
 
     private SortedList<XYChart.Data<String, Number>> preparePredictionDl4j() {
-        SortedList<XYChart.Data<String, Number>> sortedData = prepareData(coinDeskData.getClosePriceDateRange(LocalDate.now().minusDays(6), LocalDate.now()));
         LstmPredictor predictor = null;
-        double predictedValue = 0;
+        int seriesLength = 31;
+        double[] predictSeries = new double[seriesLength];
         try {
             predictor = new LstmPredictor();
-            predictedValue = predictor.predictOne();
+            //predictor.trainAndTest();
+            predictSeries = predictor.predictSeries(seriesLength);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -130,11 +133,14 @@ public class MainController implements Initializable {
         SortedList<XYChart.Data<String, Number>> outputData = new SortedList<>(dataset);
 
 
-        XYChart.Data<String, Number> data = new XYChart.Data<>(LocalDate.now().toString(), predictedValue);
-        data.setNode(
-                new HoveredThresholdNode(predictedValue, 2));
+        LocalDate startingDate = LocalDate.now().minusDays(seriesLength);
 
-        dataset.add(data);
+        for (int i = 0; i < predictSeries.length; i++) {
+            XYChart.Data<String, Number> data = new XYChart.Data<>(startingDate.plusDays(i).toString(), predictSeries[i]);
+            data.setNode(
+                    new HoveredThresholdNode(predictSeries[i], 2));
+            dataset.add(data);
+        };
         return outputData;
     }
 }
