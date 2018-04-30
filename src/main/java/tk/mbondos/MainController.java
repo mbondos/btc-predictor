@@ -95,7 +95,6 @@ public class MainController implements Initializable {
 
         for (int i = 0; i < sortedData.size(); i++) {
             inputData[i] = sortedData.get(i).getYValue().doubleValue();
-            System.out.println(inputData[i]);
         }
         double[] predictSeries = predictor.predictSeries(inputData,seriesLength);
 
