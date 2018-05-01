@@ -13,22 +13,17 @@ import java.util.Collections;
 import java.util.List;
 
 public class CoinDeskData {
-    private StringBuilder stringBuilder;
-    private URL url;
 
-    private String stringUrl = "https://api.coindesk.com/v1/bpi/historical/close.json";
+    private String closePriceUrl = "https://api.coindesk.com/v1/bpi/historical/close.json";
+    private String ohlcPriceUrl = "https://api.coindesk.com/v1/bpi/historical/ohlc.json";
     private String filenamePrefix = "src/main/resources/";
 
 
     public CoinDeskData() {
-        this(1024);
     }
 
-    public CoinDeskData(int initialCapacity) {
-        stringBuilder = new StringBuilder(initialCapacity);
-    }
-
-    private void getBpi(URL url) {
+    private StringBuilder getBpi(URL url) {
+        StringBuilder stringBuilder = new StringBuilder(1024);
         String line;
         try {
             HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
@@ -47,66 +42,51 @@ public class CoinDeskData {
             e.printStackTrace(); //TODO custom exception
         }
 
+        return stringBuilder;
     }
 
-    public String getClosePriceDateRange(LocalDate startDate, LocalDate endDate) {
-        setUrl(String.format("%s?start=%s&end=%s", stringUrl, startDate, endDate));
-        getBpi(this.url);
-        String filename = "data/btc_close_range.csv";
-        writeDataToFile(filename);
+    public String getClosePriceLast31Days() {
+        URL url = createUrl(String.format("%s?start=%s&end=%s", closePriceUrl, LocalDate.now().minusDays(31), LocalDate.now()));
+        String filename = "data/btc_close_last_31_days.csv";
+        writeDataToFile(filename, getBpi(url));
         return filename;
 
     }
 
-    public String getClosePriceLast31Days() {
-        setUrl(stringUrl);
-        getBpi(this.url);
-        String filename = "data/btc_last_31_days.csv";
-        writeDataToFile(filename);
+    public String getClosePriceDateRange(LocalDate startDate, LocalDate endDate) {
+        URL url = createUrl(String.format("%s?start=%s&end=%s", closePriceUrl, startDate, endDate));
+        String filename = "data/btc_close_range.csv";
+        writeDataToFile(filename, getBpi(url));
+        return filename;
+
+    }
+
+    public String getOhlcPriceDateRange(LocalDate startDate, LocalDate endDate) {
+        URL url = createUrl(String.format("%s?start=%s&end=%s", ohlcPriceUrl, startDate, endDate));
+        String filename = "data/btc_ohlc_range.csv";
+        writeOhlcDataToFile(filename, getBpi(url));
         return filename;
     }
 
     public String getClosePriceLifetime() {
-        setUrl(String.format("%s?start=%s&end=%s", stringUrl, LocalDate.of(2010, 7, 19), LocalDate.now()));
-        getBpi(this.url);
+        URL url = createUrl(String.format("%s?start=%s&end=%s", closePriceUrl, LocalDate.of(2010, 7, 19), LocalDate.now()));
         String filename = "data/btc_lifetime.csv";
-        writeDataToFile(filename);
-        return filename;
-    }
-
-    public String getOhlcPriceLast31Days() {
-        setUrl("https://api.coindesk.com/v1/bpi/historical/ohlc.json");
-        getBpi(this.url);
-        String filename = "data/btc_ohlc_last_31_days.csv";
-        writeOhlcDataToFile(filename);
+        writeDataToFile(filename, getBpi(url));
         return filename;
     }
 
     public String getOhlcPriceLifetime() {
-        setUrl(String.format("%s?start=%s&end=%s", "https://api.coindesk.com/v1/bpi/historical/ohlc.json", LocalDate.of(2010, 7, 19), LocalDate.now()));
-        getBpi(this.url);
+        URL url = createUrl(String.format("%s?start=%s&end=%s", ohlcPriceUrl, LocalDate.of(2010, 7, 19), LocalDate.now()));
         String filename = "data/btc_ohlc_lifetime.csv";
-        writeOhlcDataToFile(filename);
+        writeOhlcDataToFile(filename, getBpi(url));
         return filename;
     }
 
-    public String getOhlcPriceDateRange(LocalDate startDate, LocalDate endDate) {
-        setUrl(String.format("%s?start=%s&end=%s", "https://api.coindesk.com/v1/bpi/historical/ohlc.json", startDate, endDate));
-        getBpi(this.url);
-        String filename = "data/btc_ohlc_range.csv";
-        writeOhlcDataToFile(filename);
-        return filename;
-    }
-
-    private String getResponse() {
-        return stringBuilder.toString();
-    }
-
-    private void writeDataToFile(String filename) {
+    private void writeDataToFile(String filename, StringBuilder stringBuilder) {
         if (stringBuilder.length() == 0) {
             throw new RuntimeException();
         }
-        JSONObject jsonObject = new JSONObject(getResponse());
+        JSONObject jsonObject = new JSONObject(stringBuilder.toString());
         JSONObject bpi = jsonObject.getJSONObject("bpi");
 
         String bpiString = bpi.toString();
@@ -129,11 +109,11 @@ public class CoinDeskData {
         }
     }
 
-    private void writeOhlcDataToFile(String filename) {
+    private void writeOhlcDataToFile(String filename, StringBuilder stringBuilder) {
         if (stringBuilder.length() == 0) {
             throw new RuntimeException();
         }
-        JSONObject jsonObject = new JSONObject(getResponse());
+        JSONObject jsonObject = new JSONObject(stringBuilder.toString());
         JSONObject bpi = jsonObject.getJSONObject("bpi");
 
         String bpiString = bpi.toString();
@@ -152,11 +132,11 @@ public class CoinDeskData {
                 for (String priceString : ohlcArray) {
                     String[] splitPrice = priceString.split(":");
                     if (splitPrice.length == 2)
-                    priceArray[i] = Double.valueOf(splitPrice[1]);
+                        priceArray[i] = Double.valueOf(splitPrice[1]);
                     i++;
                 }
                 //format : date, open, high, low, close
-                data.add(new ExchangeRateData(date, priceArray[3], priceArray[0],  priceArray[1], priceArray[2]));
+                data.add(new ExchangeRateData(date, priceArray[3], priceArray[0], priceArray[1], priceArray[2]));
             }
             Collections.sort(data);
             for (ExchangeRateData line : data) {
@@ -171,18 +151,15 @@ public class CoinDeskData {
         }
     }
 
+    private URL createUrl(String urlString) {
+        URL url;
+        try {
+            url = new URL(urlString);
+        } catch (MalformedURLException e) {
+            return null;
+        }
 
-    public URL getUrl() {
         return url;
     }
 
-    private void setUrl(String urlString) {
-        if (this.url == null || !urlString.equals(url.toString())) {
-            try {
-                this.url = new URL(urlString);
-            } catch (MalformedURLException e) {
-                e.printStackTrace(); //TODO custom exception
-            }
-        }
-    }
 }

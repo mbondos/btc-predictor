@@ -34,15 +34,13 @@ public class MainController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
 
 
-        String filename = coinDeskData.getClosePriceLast31Days();
 
        /* btcChart.getXAxis().setTickLabelsVisible(false);
         btcChart.getXAxis().setOpacity(0);*/
 
-        coinDeskData.getOhlcPriceDateRange(LocalDate.of(2016,01,01),LocalDate.now());
 
         btcChart.getData().addAll(
-                new XYChart.Series("CoinDesk", prepareData(filename)),
+                new XYChart.Series("CoinDesk", prepareData(coinDeskData.getClosePriceLast31Days())),
                 new XYChart.Series("Neuroph", preparePredictionNeuroph()),
                 new XYChart.Series("Dl4j", preparePredictionDl4j())
         );
@@ -72,14 +70,10 @@ public class MainController implements Initializable {
                     dataset.add(data);
                 }
             }
+
+            reader.close();
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                reader.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
 
 
