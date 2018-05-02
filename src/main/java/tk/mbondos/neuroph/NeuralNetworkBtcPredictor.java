@@ -8,6 +8,7 @@ import org.neuroph.core.events.LearningEventListener;
 import org.neuroph.core.learning.SupervisedLearning;
 import org.neuroph.nnet.MultiLayerPerceptron;
 import org.neuroph.nnet.learning.BackPropagation;
+import tk.mbondos.CoinDeskData;
 
 import java.io.*;
 import java.util.LinkedList;
@@ -17,11 +18,13 @@ public class NeuralNetworkBtcPredictor {
     private double max = 0;
     private double min = Double.MAX_VALUE;
 
-    private String rawDataFilePath = "input/trainingData.csv";
+    private String rawDataFilePath = "src/main/resources/data/btc_close_lifetime";
     private String learningDataFilePath = "input/learningDataNotNormalised.csv";
     private String neuralNetworkModelFilePath = "src/main/resources/stockPredictor.nnet";
 
     public NeuralNetworkBtcPredictor() {
+        CoinDeskData coinDeskData = new CoinDeskData();
+        rawDataFilePath = coinDeskData.getClosePriceLifetime();
     }
 
     public NeuralNetworkBtcPredictor(int slidingWindowSize, String rawDataFilePath) {

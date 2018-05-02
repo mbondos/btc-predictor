@@ -20,6 +20,13 @@ public class CoinDeskData {
 
 
     public CoinDeskData() {
+/*        File directory = new File("src/main/resources/data/");
+        File[] files = directory.listFiles();
+        if(files!=null) { //some JVMs return null for empty dirs
+            for(File f : files){
+                f.delete();
+            }
+        }*/
     }
 
     private StringBuilder getBpi(URL url) {
@@ -49,7 +56,7 @@ public class CoinDeskData {
         URL url = createUrl(String.format("%s?start=%s&end=%s", closePriceUrl, LocalDate.now().minusDays(31), LocalDate.now()));
         String filename = "data/btc_close_last_31_days.csv";
         writeDataToFile(filename, getBpi(url));
-        return filename;
+        return filenamePrefix + filename;
 
     }
 
@@ -57,7 +64,7 @@ public class CoinDeskData {
         URL url = createUrl(String.format("%s?start=%s&end=%s", closePriceUrl, startDate, endDate));
         String filename = "data/btc_close_range.csv";
         writeDataToFile(filename, getBpi(url));
-        return filename;
+        return filenamePrefix + filename;
 
     }
 
@@ -65,21 +72,21 @@ public class CoinDeskData {
         URL url = createUrl(String.format("%s?start=%s&end=%s", ohlcPriceUrl, startDate, endDate));
         String filename = "data/btc_ohlc_range.csv";
         writeOhlcDataToFile(filename, getBpi(url));
-        return filename;
+        return filenamePrefix + filename;
     }
 
     public String getClosePriceLifetime() {
         URL url = createUrl(String.format("%s?start=%s&end=%s", closePriceUrl, LocalDate.of(2010, 7, 19), LocalDate.now()));
-        String filename = "data/btc_lifetime.csv";
+        String filename = "data/btc_close_lifetime.csv";
         writeDataToFile(filename, getBpi(url));
-        return filename;
+        return filenamePrefix + filename;
     }
 
     public String getOhlcPriceLifetime() {
         URL url = createUrl(String.format("%s?start=%s&end=%s", ohlcPriceUrl, LocalDate.of(2010, 7, 19), LocalDate.now()));
         String filename = "data/btc_ohlc_lifetime.csv";
         writeOhlcDataToFile(filename, getBpi(url));
-        return filename;
+        return filenamePrefix + filename;
     }
 
     private void writeDataToFile(String filename, StringBuilder stringBuilder) {
@@ -95,10 +102,12 @@ public class CoinDeskData {
         try {
             BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(filenamePrefix + filename)));
 
-            for (String token : tokens) {
-                token = token.replace(":", ",");
+            for (int i = 0; i < tokens.length; i++) {
+                if (i != 0) {
+                    bufferedWriter.newLine();
+                }
+                String token = tokens[i].replace(":", ",");
                 bufferedWriter.write(token);
-                bufferedWriter.newLine();
             }
 
             bufferedWriter.flush();
@@ -139,9 +148,12 @@ public class CoinDeskData {
                 data.add(new ExchangeRateData(date, priceArray[3], priceArray[0], priceArray[1], priceArray[2]));
             }
             Collections.sort(data);
-            for (ExchangeRateData line : data) {
+            for (int i = 0; i < data.size(); i++) {
+                if (i != 0) {
+                    bufferedWriter.newLine();
+                }
+                ExchangeRateData line = data.get(i);
                 bufferedWriter.write(line.toString());
-                bufferedWriter.newLine();
             }
 
             bufferedWriter.flush();

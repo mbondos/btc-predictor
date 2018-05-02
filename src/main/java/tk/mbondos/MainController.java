@@ -1,20 +1,30 @@
 package tk.mbondos;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Scene;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextArea;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import org.nd4j.linalg.io.ClassPathResource;
 import tk.mbondos.dl4j.LstmPredictor;
 import tk.mbondos.neuroph.NeuralNetworkBtcPredictor;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+
+import java.io.*;
 import java.net.URL;
 import java.time.LocalDate;
 import java.util.ResourceBundle;
@@ -28,24 +38,37 @@ public class MainController implements Initializable {
     @FXML
     private NumberAxis yAxis;
 
-    private CoinDeskData coinDeskData = new CoinDeskData();
+    @FXML
+    private MenuItem menuPredict;
+
+    @FXML
+    private MenuItem menuTest;
+
+    private CoinDeskData coinDeskData;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-
-
-
-       /* btcChart.getXAxis().setTickLabelsVisible(false);
-        btcChart.getXAxis().setOpacity(0);*/
-
-
-        btcChart.getData().addAll(
-                new XYChart.Series("CoinDesk", prepareData(coinDeskData.getClosePriceLast31Days())),
-                new XYChart.Series("Neuroph", preparePredictionNeuroph()),
-                new XYChart.Series("Dl4j", preparePredictionDl4j())
-        );
-
+        coinDeskData = new CoinDeskData();
+        setUpTest(null);
     }
+
+    public void setUpTest(ActionEvent event) {
+        btcChart.getData().clear();
+        btcChart.getData().addAll(
+                new XYChart.Series("Neuroph", preparePredictionNeuroph(31, LocalDate.now().minusDays(31))),
+                new XYChart.Series("Dl4j", preparePredictionDl4j(31, LocalDate.now().minusDays(31))),
+        new XYChart.Series("CoinDesk", prepareData(coinDeskData.getClosePriceLast31Days()))
+        );
+    }
+
+    public void setUpPrediction(ActionEvent event) {
+        btcChart.getData().clear();
+        btcChart.getData().addAll(
+                new XYChart.Series("Neuroph", preparePredictionNeuroph(7, LocalDate.now().minusDays(1))),
+                new XYChart.Series("Dl4j", preparePredictionDl4j(7, LocalDate.now().minusDays(1)))
+        );
+    }
+
 
     private SortedList<XYChart.Data<String, Number>> prepareData(String dataSetPath) {
         ObservableList<XYChart.Data<String, Number>> dataset = FXCollections.observableArrayList();
@@ -57,16 +80,16 @@ public class MainController implements Initializable {
 
         BufferedReader reader = null;
         try {
-            reader = new BufferedReader(new FileReader(new ClassPathResource(dataSetPath).getFile()));
+            reader = new BufferedReader(new FileReader(new File(dataSetPath)));
             String line;
 
             while ((line = reader.readLine()) != null) {
                 String[] tokens = line.split(",");
                 String date = tokens[0].substring(1, 11);
                 if (tokens.length != 1) {
-                    final XYChart.Data<String , Number> data = new XYChart.Data<>(date, Double.valueOf(tokens[1]));
+                    final XYChart.Data<String, Number> data = new XYChart.Data<>(date, Double.valueOf(tokens[1]));
                     data.setNode(
-                            new HoveredThresholdNode(Double.valueOf(tokens[1]), 0));
+                            new HoveredThresholdNode(Double.valueOf(tokens[1]), 2));
                     dataset.add(data);
                 }
             }
@@ -80,9 +103,8 @@ public class MainController implements Initializable {
         return sortedData;
     }
 
-    private SortedList<XYChart.Data<String, Number>> preparePredictionNeuroph() {
-        int seriesLength = 31;
-        SortedList<XYChart.Data<String, Number>> sortedData = prepareData(coinDeskData.getClosePriceDateRange(LocalDate.now().minusDays(seriesLength + 5), LocalDate.now().minusDays(seriesLength)));
+    private SortedList<XYChart.Data<String, Number>> preparePredictionNeuroph(int seriesLength, LocalDate startingDate) {
+        SortedList<XYChart.Data<String, Number>> sortedData = prepareData(coinDeskData.getClosePriceDateRange(startingDate.minusDays(5), startingDate));
         NeuralNetworkBtcPredictor predictor = new NeuralNetworkBtcPredictor();
         double[] inputData = new double[6];
 
@@ -90,34 +112,29 @@ public class MainController implements Initializable {
         for (int i = 0; i < sortedData.size(); i++) {
             inputData[i] = sortedData.get(i).getYValue().doubleValue();
         }
-        double[] predictSeries = predictor.predictSeries(inputData,seriesLength);
+        double[] predictSeries = predictor.predictSeries(inputData, seriesLength);
 
         ObservableList<XYChart.Data<String, Number>> dataset = FXCollections.observableArrayList();
         SortedList<XYChart.Data<String, Number>> outputData = new SortedList<>(dataset);
-        LocalDate startingDate = LocalDate.now().minusDays(seriesLength);
 
         for (int i = 0; i < predictSeries.length; i++) {
             XYChart.Data<String, Number> data = new XYChart.Data<>(startingDate.plusDays(i).toString(), predictSeries[i]);
             data.setNode(
-                    new HoveredThresholdNode(predictSeries[i], 1));
+                    new HoveredThresholdNode(predictSeries[i], 0));
             dataset.add(data);
         }
-
-
 
 
         return outputData;
 
     }
 
-    private SortedList<XYChart.Data<String, Number>> preparePredictionDl4j() {
+    private SortedList<XYChart.Data<String, Number>> preparePredictionDl4j(int seriesLength, LocalDate startingDate) {
         LstmPredictor predictor = null;
-        int seriesLength = 31;
         double[] predictSeries = new double[seriesLength];
         try {
             predictor = new LstmPredictor();
-            //predictor.trainAndTest();
-            predictSeries = predictor.predictSeries(seriesLength);
+            predictSeries = predictor.predictSeries(seriesLength, startingDate);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -126,14 +143,67 @@ public class MainController implements Initializable {
         SortedList<XYChart.Data<String, Number>> outputData = new SortedList<>(dataset);
 
 
-        LocalDate startingDate = LocalDate.now().minusDays(seriesLength);
-
         for (int i = 0; i < predictSeries.length; i++) {
             XYChart.Data<String, Number> data = new XYChart.Data<>(startingDate.plusDays(i).toString(), predictSeries[i]);
             data.setNode(
-                    new HoveredThresholdNode(predictSeries[i], 2));
+                    new HoveredThresholdNode(predictSeries[i], 1));
             dataset.add(data);
-        };
+        }
+        ;
         return outputData;
+    }
+
+    public void trainDl4j(ActionEvent event) {
+
+        final Stage dialog = new Stage();
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        VBox dialogVbox = new VBox(20);
+        dialogVbox.getChildren().add(new Text("This is a Dialog"));
+        Scene dialogScene = new Scene(dialogVbox, 300, 200);
+        dialog.setScene(dialogScene);
+        dialog.show();
+/*        console.setVisible(true);
+        System.setOut(ps);
+        System.setErr(ps);*/
+        LstmPredictor predictor = null;
+        try {
+            predictor = new LstmPredictor();
+           // predictor.trainAndTest();
+            preparePredictionDl4j(7, LocalDate.now().minusDays(1));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void trainNeuroph(ActionEvent event) {
+
+    }
+
+    public void showAuthorDialog(ActionEvent event) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Autor");
+        alert.setHeaderText("Autor: Maksymilian Bondos");
+        //alert.setContentText("");
+        alert.showAndWait().ifPresent(rs -> {
+            if (rs == ButtonType.OK) {
+                System.out.println("Pressed OK.");
+            }
+        });
+    }
+
+    public class Console extends OutputStream {
+        private TextArea console;
+
+        public Console(TextArea console) {
+            this.console = console;
+        }
+
+        public void appendText(String valueOf) {
+            Platform.runLater(() -> console.appendText(valueOf));
+        }
+
+        public void write(int b) throws IOException {
+            appendText(String.valueOf((char) b));
+        }
     }
 }

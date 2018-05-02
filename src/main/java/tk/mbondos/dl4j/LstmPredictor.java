@@ -18,7 +18,7 @@ import java.util.List;
 public class LstmPredictor {
     private static final Logger log = LoggerFactory.getLogger(LstmPredictor.class);
     private int exampleLength = 24;
-    private String file = new ClassPathResource("ohlc.csv").getFile().getAbsolutePath();
+    private String file = "src/main/resources/data/btc_ohlc_lifetime.csv";
     private int batchSize = 64;
 
     private double splitRatio = 1; // Ratio of train to test data. Use 1 for 100% train data.
@@ -34,6 +34,8 @@ public class LstmPredictor {
     private MultiLayerNetwork network = LstmNetwork.buildLstmNetwork(iterator.inputColumns(), iterator.totalOutcomes());
 
     public LstmPredictor() throws IOException {
+        CoinDeskData coinDeskData = new CoinDeskData();
+        file = coinDeskData.getOhlcPriceLifetime();
     }
 
     public void trainAndTest() throws IOException {
@@ -83,13 +85,13 @@ public class LstmPredictor {
         return predictionNormalized;
     }
 
-    public double[] predictSeries(int seriesLength) throws IOException {
+    public double[] predictSeries(int seriesLength, LocalDate startingDate) throws IOException {
         double[] output = new double[seriesLength];
 
-        String fileName = new ClassPathResource(
+        String fileName =
                 coinDeskData.getOhlcPriceDateRange(
-                        LocalDate.now().minusDays(seriesLength + exampleLength - 1),
-                        LocalDate.now().minusDays(seriesLength))).getFile().getAbsolutePath();
+                        startingDate.minusDays(exampleLength - 1),
+                        startingDate);
 
         MultiLayerNetwork network =
                 ModelSerializer.restoreMultiLayerNetwork(networkFileLocation);
