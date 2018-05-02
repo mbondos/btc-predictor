@@ -12,15 +12,10 @@ import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import org.nd4j.linalg.io.ClassPathResource;
 import tk.mbondos.dl4j.LstmPredictor;
 import tk.mbondos.neuroph.NeuralNetworkBtcPredictor;
 
@@ -55,17 +50,17 @@ public class MainController implements Initializable {
     public void setUpTest(ActionEvent event) {
         btcChart.getData().clear();
         btcChart.getData().addAll(
-                new XYChart.Series("Neuroph", preparePredictionNeuroph(31, LocalDate.now().minusDays(31))),
-                new XYChart.Series("Dl4j", preparePredictionDl4j(31, LocalDate.now().minusDays(31))),
-        new XYChart.Series("CoinDesk", prepareData(coinDeskData.getClosePriceLast31Days()))
+                new XYChart.Series("Neuroph ", preparePredictionNeuroph(31, LocalDate.now().minusDays(31))),
+                new XYChart.Series("DeepLearning4j ", preparePredictionDl4j(31, LocalDate.now().minusDays(31))),
+                new XYChart.Series("CoinDesk ", prepareData(coinDeskData.getClosePriceLast31Days()))
         );
     }
 
     public void setUpPrediction(ActionEvent event) {
         btcChart.getData().clear();
         btcChart.getData().addAll(
-                new XYChart.Series("Neuroph", preparePredictionNeuroph(7, LocalDate.now().minusDays(1))),
-                new XYChart.Series("Dl4j", preparePredictionDl4j(7, LocalDate.now().minusDays(1)))
+                new XYChart.Series("Neuroph ", preparePredictionNeuroph(7, LocalDate.now().minusDays(1))),
+                new XYChart.Series("DeepLearning4j ", preparePredictionDl4j(7, LocalDate.now().minusDays(1)))
         );
     }
 
@@ -156,26 +151,75 @@ public class MainController implements Initializable {
     public void trainDl4j(ActionEvent event) {
 
         final Stage dialog = new Stage();
+        TextArea textArea = new TextArea();
+        PrintStream ps = new PrintStream(new Console(textArea));
+        ProgressIndicator progressIndicator = new ProgressIndicator();
+        System.setOut(ps);
+        System.setErr(ps);
+        dialog.setTitle("Trenowanie sieci");
         dialog.initModality(Modality.APPLICATION_MODAL);
         VBox dialogVbox = new VBox(20);
-        dialogVbox.getChildren().add(new Text("This is a Dialog"));
-        Scene dialogScene = new Scene(dialogVbox, 300, 200);
+        dialogVbox.getChildren().addAll(progressIndicator, textArea);
+        Scene dialogScene = new Scene(dialogVbox, 1000, 300);
         dialog.setScene(dialogScene);
         dialog.show();
-/*        console.setVisible(true);
-        System.setOut(ps);
-        System.setErr(ps);*/
-        LstmPredictor predictor = null;
+
+        textArea.setVisible(false);
+
         try {
-            predictor = new LstmPredictor();
-           // predictor.trainAndTest();
-            preparePredictionDl4j(7, LocalDate.now().minusDays(1));
+            progressIndicator.setVisible(true);
+            LstmPredictor predictor = new LstmPredictor();
+
+
+            new Thread(() -> {
+                try {
+                    predictor.trainNetwork();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                textArea.setVisible(true);
+                progressIndicator.setVisible(false);
+            }).start();
+
+
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public void trainNeuroph(ActionEvent event) {
+        final Stage dialog = new Stage();
+        TextArea textArea = new TextArea();
+        PrintStream ps = new PrintStream(new Console(textArea));
+        ProgressIndicator progressIndicator = new ProgressIndicator();
+        System.setOut(ps);
+        System.setErr(ps);
+        dialog.setTitle("Trenowanie sieci");
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        VBox dialogVbox = new VBox(20);
+        dialogVbox.getChildren().addAll(progressIndicator, textArea);
+        Scene dialogScene = new Scene(dialogVbox, 1000, 300);
+        dialog.setScene(dialogScene);
+        dialog.show();
+
+        textArea.setVisible(false);
+        progressIndicator.setVisible(true);
+
+        NeuralNetworkBtcPredictor predictor = new NeuralNetworkBtcPredictor();
+
+        new Thread(() -> {
+            try {
+                predictor.trainNetwork();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            textArea.setVisible(true);
+            progressIndicator.setVisible(false);
+        }).start();
+
+
+        textArea.setVisible(true);
+        progressIndicator.setVisible(false);
 
     }
 
@@ -184,11 +228,7 @@ public class MainController implements Initializable {
         alert.setTitle("Autor");
         alert.setHeaderText("Autor: Maksymilian Bondos");
         //alert.setContentText("");
-        alert.showAndWait().ifPresent(rs -> {
-            if (rs == ButtonType.OK) {
-                System.out.println("Pressed OK.");
-            }
-        });
+        alert.showAndWait();
     }
 
     public class Console extends OutputStream {

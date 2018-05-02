@@ -38,7 +38,7 @@ public class LstmPredictor {
         file = coinDeskData.getOhlcPriceLifetime();
     }
 
-    public void trainAndTest() throws IOException {
+    public void trainNetwork() throws IOException {
         log.info("Training...");
         for (int i = 0; i < epochs; i++) {
             while (iterator.hasNext()) {
@@ -50,7 +50,9 @@ public class LstmPredictor {
         log.info("Saving model...");
 
         ModelSerializer.writeModel(network, networkFileLocation, true);
+    }
 
+    public void testNetwork() throws IOException {
         log.info("Load model...");
         network = ModelSerializer.restoreMultiLayerNetwork(networkFileLocation);
 

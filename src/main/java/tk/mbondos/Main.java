@@ -18,7 +18,7 @@ public class Main extends Application {
         primaryStage.show();
 
 /*        LstmPredictor predictor = new LstmPredictor();
-        predictor.trainAndTest();*/
+        predictor.trainNetwork();*/
 
     }
 

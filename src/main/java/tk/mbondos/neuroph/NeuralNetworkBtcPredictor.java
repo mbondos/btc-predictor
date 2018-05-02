@@ -116,7 +116,7 @@ public class NeuralNetworkBtcPredictor {
 
     }
 
-    void trainNetwork() throws IOException {
+    public void trainNetwork() throws IOException {
         NeuralNetwork<BackPropagation> neuralNetwork =
                 new MultiLayerPerceptron(slidingWindowSize, 2 * slidingWindowSize + 1, 1);
 
@@ -127,13 +127,11 @@ public class NeuralNetworkBtcPredictor {
         learningRule.setMaxError(maxError);
         learningRule.setLearningRate(learningRate);
         learningRule.setMaxIterations(maxIterations);
-        learningRule.addListener(new LearningEventListener() {
-            public void handleLearningEvent(LearningEvent learningEvent) {
-                SupervisedLearning rule = (SupervisedLearning) learningEvent.getSource();
-                System.out.println("Network error for interation "
-                        + rule.getCurrentIteration() + ": "
-                        + rule.getTotalNetworkError());
-            }
+        learningRule.addListener(learningEvent -> {
+            SupervisedLearning rule = (SupervisedLearning) learningEvent.getSource();
+            System.out.println("Network error for interation "
+                    + rule.getCurrentIteration() + ": "
+                    + rule.getTotalNetworkError());
         });
 
         DataSet trainingSet = loadTrainingData(learningDataFilePath);
