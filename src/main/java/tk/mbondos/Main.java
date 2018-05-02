@@ -5,7 +5,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import tk.mbondos.dl4j.LstmPredictor;
 
 public class Main extends Application {
 
@@ -16,10 +15,6 @@ public class Main extends Application {
         scene.getStylesheets().add("style.css");
         primaryStage.setScene(scene);
         primaryStage.show();
-
-/*        LstmPredictor predictor = new LstmPredictor();
-        predictor.trainNetwork();*/
-
     }
 
 
