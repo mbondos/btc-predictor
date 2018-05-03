@@ -53,7 +53,7 @@ public class CoinDeskData {
     }
 
     public String getClosePriceLast31Days() {
-        URL url = createUrl(String.format("%s?start=%s&end=%s", closePriceUrl, LocalDate.now().minusDays(31), LocalDate.now()));
+        URL url = createUrl(String.format("%s?start=%s&end=%s", closePriceUrl, LocalDate.now().minusDays(31), LocalDate.now().minusDays(1)));
         String filename = "data/btc_close_last_31_days.csv";
         writeDataToFile(filename, getBpi(url));
         return filenamePrefix + filename;
