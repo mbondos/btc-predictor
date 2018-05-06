@@ -13,7 +13,7 @@ public class Main extends Application {
         Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("main.fxml"));
         primaryStage.setTitle("Bitcoin Predictor");
         primaryStage.getIcons().add(new Image("https://i.imgur.com/54ZleiH.png"));
-        Scene scene = new Scene(root, 1280, 500);
+        Scene scene = new Scene(root, 1280, 600);
         scene.getStylesheets().add("style.css");
         primaryStage.setScene(scene);
         primaryStage.show();

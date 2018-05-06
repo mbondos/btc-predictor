@@ -7,12 +7,14 @@ import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -44,23 +46,33 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         coinDeskData = new CoinDeskData();
+
+        btcChart.setMinHeight(550);
+
+        yAxis.setAutoRanging(false);
+        yAxis.setLowerBound(6000);
+        yAxis.setUpperBound(10000);
+        yAxis.setTickUnit(100);
+
+        //xAxis.setTickLabelGap(1);
+
         setUpTest(null);
     }
 
     public void setUpTest(ActionEvent event) {
         btcChart.getData().clear();
         btcChart.getData().addAll(
-                new XYChart.Series("Neuroph ", preparePredictionNeuroph(31, LocalDate.now().minusDays(31))),
+                new XYChart.Series("Neuroph MLP ", preparePredictionNeuroph(31, LocalDate.now().minusDays(31))),
                 new XYChart.Series("DeepLearning4j ", preparePredictionDl4j(31, LocalDate.now().minusDays(31))),
-                new XYChart.Series("CoinDesk ", prepareData(coinDeskData.getClosePriceLast31Days()))
+                new XYChart.Series("CoinDesk API ", prepareData(coinDeskData.getClosePriceLast31Days()))
         );
     }
 
     public void setUpPrediction(ActionEvent event) {
         btcChart.getData().clear();
         btcChart.getData().addAll(
-                new XYChart.Series("Neuroph ", preparePredictionNeuroph(7, LocalDate.now())),
-                new XYChart.Series("DeepLearning4j ", preparePredictionDl4j(7, LocalDate.now()))
+                new XYChart.Series("Neuroph MLP ", preparePredictionNeuroph(7, LocalDate.now())),
+                new XYChart.Series("DeepLearning4j", preparePredictionDl4j(7, LocalDate.now()))
         );
     }
 
@@ -160,8 +172,9 @@ public class MainController implements Initializable {
         System.setErr(ps);
         dialog.setTitle("Trenowanie sieci");
         dialog.initModality(Modality.APPLICATION_MODAL);
-        VBox dialogVbox = new VBox(20);
+        StackPane dialogVbox = new StackPane();
         dialogVbox.getChildren().addAll(progressIndicator, textArea);
+        StackPane.setAlignment(progressIndicator, Pos.CENTER);
         Scene dialogScene = new Scene(dialogVbox, 1000, 300);
         dialog.setScene(dialogScene);
         dialog.show();
@@ -209,17 +222,18 @@ public class MainController implements Initializable {
 
         NeuralNetworkBtcPredictor predictor = new NeuralNetworkBtcPredictor();
 
-        new Thread(() -> {
-            try {
-                predictor.trainNetwork();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            textArea.setVisible(true);
-            progressIndicator.setVisible(false);
-        }).start();
+  /*      new Thread(() -> {
 
 
+        }).start();*/
+        try {
+            predictor.trainNetwork();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        textArea.setVisible(true);
+        progressIndicator.setVisible(false);
         textArea.setVisible(true);
         progressIndicator.setVisible(false);
 

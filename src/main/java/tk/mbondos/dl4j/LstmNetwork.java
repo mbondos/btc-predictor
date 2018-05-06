@@ -17,22 +17,20 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 public class LstmNetwork {
     private static final double learningRate = 0.05;
-    private static final int iterations = 1;
     private static final int seed = 12345;
     private static final int lstmLayer1Size = 256;
     private static final int lstmLayer2Size = 256;
     private static final int denseLayerSize = 32;
-    private static final double dropoutRatio = 0.2;
-    private static final int truncatedBPTTLength = 31;
+    private static final double dropoutRatio = 0.1;
+    private static final int truncatedBPTTLength = 24;
 
         public static MultiLayerNetwork buildLstmNetwork(int nIn, int nOut) {
             MultiLayerConfiguration conf = new NeuralNetConfiguration.Builder()
                     .seed(seed)
-                    .iterations(iterations)
                     .learningRate(learningRate)
                     .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                    .weightInit(WeightInit.XAVIER)
                     .updater(Updater.RMSPROP)
+                    .weightInit(WeightInit.XAVIER)
                     .regularization(true)
                     .l2(1e-4)
                     .list()

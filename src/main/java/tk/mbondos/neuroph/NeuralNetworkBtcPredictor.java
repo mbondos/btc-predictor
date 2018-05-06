@@ -120,7 +120,7 @@ public class NeuralNetworkBtcPredictor {
         NeuralNetwork<BackPropagation> neuralNetwork =
                 new MultiLayerPerceptron(slidingWindowSize, 2 * slidingWindowSize + 1, 1);
 
-        int maxIterations = 10000;
+        int maxIterations = 1000;
         double learningRate = 0.5;
         double maxError = 0.00001;
         SupervisedLearning learningRule = neuralNetwork.getLearningRule();
@@ -134,6 +134,7 @@ public class NeuralNetworkBtcPredictor {
                     + rule.getTotalNetworkError());
         });
 
+        prepareData();
         DataSet trainingSet = loadTrainingData(learningDataFilePath);
         neuralNetwork.learn(trainingSet);
         neuralNetwork.save(neuralNetworkModelFilePath);
@@ -150,7 +151,7 @@ public class NeuralNetworkBtcPredictor {
 
                 double trainValues[] = new double[slidingWindowSize];
                 for (int i = 0; i < slidingWindowSize; i++) {
-                    trainValues[i] = Double.valueOf(tokens[i]);
+                    trainValues[i] = Double.valueOf(tokens[1]);
                 }
                 double expectedValue[] = new double[]{
                         Double.valueOf(tokens[slidingWindowSize])
