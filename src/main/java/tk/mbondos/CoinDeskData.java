@@ -16,7 +16,7 @@ public class CoinDeskData {
 
     private String closePriceUrl = "https://api.coindesk.com/v1/bpi/historical/close.json";
     private String ohlcPriceUrl = "https://api.coindesk.com/v1/bpi/historical/ohlc.json";
-    private String filenamePrefix = "src/main/resources/";
+    private String filenamePrefix = "";
 
 
     public CoinDeskData() {
@@ -100,7 +100,9 @@ public class CoinDeskData {
         bpiString = bpiString.substring(1, bpiString.length() - 1);
         String[] tokens = bpiString.split(",");
         try {
-            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(filenamePrefix + filename)));
+            File file = new File(filenamePrefix + filename);
+            file.getParentFile().mkdirs();
+            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file));
 
             for (int i = 0; i < tokens.length; i++) {
                 if (i != 0) {
@@ -130,7 +132,9 @@ public class CoinDeskData {
         String[] tokens = bpiString.split("},");
         List<ExchangeRateData> data = new ArrayList<>();
         try {
-            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(filenamePrefix + filename)));
+            File file = new File(filenamePrefix + filename);
+            file.getParentFile().mkdirs();
+            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file));
 
             for (String token : tokens) {
                 String date = token.substring(1, 11);

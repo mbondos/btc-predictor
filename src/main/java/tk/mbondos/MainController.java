@@ -26,7 +26,7 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.util.ResourceBundle;
 
-public class MainController implements Initializable {
+public class MainController {
     public LineChart<?, ?> btcChart;
 
     @FXML
@@ -41,10 +41,14 @@ public class MainController implements Initializable {
     @FXML
     private MenuItem menuTest;
 
+    @FXML
+    private TextArea textArea;
+
     private CoinDeskData coinDeskData;
 
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
+    public void initialize() throws Exception{
+        File file1 = new File("data/");
+        file1.mkdirs();
         coinDeskData = new CoinDeskData();
 
         btcChart.setMinHeight(550);
@@ -56,10 +60,33 @@ public class MainController implements Initializable {
 
         //xAxis.setTickLabelGap(1);
 
-        setUpTest(null);
+
+            //setUpTest(null);
+
+
+/*
+
+        BufferedWriter bufferedWriter = null;
+        try {
+            bufferedWriter = new BufferedWriter(new FileWriter(file1));
+            bufferedWriter.write("asdadssad");
+            bufferedWriter.flush();
+            bufferedWriter.close();
+
+            //File file = new File(MainController.class.getResource("/data/asd.txt").getFile());
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(file1));
+            String line = bufferedReader.readLine();
+
+            textArea.setVisible(true);
+            textArea.appendText(line);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+*/
+
     }
 
-    public void setUpTest(ActionEvent event) {
+    public void setUpTest(ActionEvent event) throws IOException {
         btcChart.getData().clear();
         btcChart.getData().addAll(
                 new XYChart.Series("Neuroph MLP ", preparePredictionNeuroph(31, LocalDate.now().minusDays(31))),
@@ -68,7 +95,7 @@ public class MainController implements Initializable {
         );
     }
 
-    public void setUpPrediction(ActionEvent event) {
+    public void setUpPrediction(ActionEvent event) throws IOException {
         btcChart.getData().clear();
         btcChart.getData().addAll(
                 new XYChart.Series("Neuroph MLP ", preparePredictionNeuroph(7, LocalDate.now())),
@@ -140,13 +167,15 @@ public class MainController implements Initializable {
     private SortedList<XYChart.Data<String, Number>> preparePredictionDl4j(int seriesLength, LocalDate startingDate) {
         startingDate = startingDate.minusDays(1);
         LstmPredictor predictor = null;
-        double[] predictSeries = new double[seriesLength];
+        double[] predictSeries = new double[0];
         try {
             predictor = new LstmPredictor();
             predictSeries = predictor.predictSeries(seriesLength, startingDate);
         } catch (IOException e) {
             e.printStackTrace();
+
         }
+
 
         ObservableList<XYChart.Data<String, Number>> dataset = FXCollections.observableArrayList();
         SortedList<XYChart.Data<String, Number>> outputData = new SortedList<>(dataset);
@@ -162,7 +191,7 @@ public class MainController implements Initializable {
         return outputData;
     }
 
-    public void trainDl4j(ActionEvent event) {
+    public void trainDl4j(ActionEvent event) throws IOException {
 
         final Stage dialog = new Stage();
         TextArea textArea = new TextArea();
@@ -181,7 +210,6 @@ public class MainController implements Initializable {
 
         textArea.setVisible(false);
 
-        try {
             progressIndicator.setVisible(true);
             LstmPredictor predictor = new LstmPredictor();
 
@@ -197,12 +225,10 @@ public class MainController implements Initializable {
             }).start();
 
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
     }
 
-    public void trainNeuroph(ActionEvent event) {
+    public void trainNeuroph(ActionEvent event) throws IOException {
         final Stage dialog = new Stage();
         TextArea textArea = new TextArea();
         PrintStream ps = new PrintStream(new Console(textArea));
@@ -226,11 +252,9 @@ public class MainController implements Initializable {
 
 
         }).start();*/
-        try {
+
             predictor.trainNetwork();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
 
         textArea.setVisible(true);
         progressIndicator.setVisible(false);

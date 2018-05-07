@@ -24,7 +24,7 @@ public class LstmPredictor {
     private double splitRatio = 1; // Ratio of train to test data. Use 1 for 100% train data.
     private int epochs = 100;
     private PriceCategory category = PriceCategory.CLOSE;
-    private File networkFileLocation = new File("src/main/resources/StockPriceLSTM_CLOSE.zip");
+    private File networkFileLocation = new File("data/StockPriceLSTM_CLOSE.zip");
 
 
     private ExchangeRateDataIterator iterator = new ExchangeRateDataIterator(file, batchSize, exampleLength, splitRatio, category);

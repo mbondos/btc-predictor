@@ -18,9 +18,9 @@ public class NeuralNetworkBtcPredictor {
     private double max = 0;
     private double min = Double.MAX_VALUE;
 
-    private String rawDataFilePath = "src/main/resources/data/btc_close_lifetime";
-    private String learningDataFilePath = "input/learningDataNotNormalised.csv";
-    private String neuralNetworkModelFilePath = "src/main/resources/stockPredictor.nnet";
+    private String rawDataFilePath = "data/btc_close_lifetime";
+    private String learningDataFilePath = "data/learningDataNotNormalised.csv";
+    private String neuralNetworkModelFilePath = "data/stockPredictor.nnet";
 
     public NeuralNetworkBtcPredictor() {
         CoinDeskData coinDeskData = new CoinDeskData();
@@ -53,8 +53,10 @@ public class NeuralNetworkBtcPredictor {
         }
 
         reader = new BufferedReader(new FileReader(rawDataFilePath));
-        BufferedWriter writer = new BufferedWriter(new FileWriter(learningDataFilePath));
-        BufferedWriter minMaxWriter = new BufferedWriter(new FileWriter("min_max.txt"));
+        File file = new File(learningDataFilePath);
+        file.getParentFile().mkdirs();
+        BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+        BufferedWriter minMaxWriter = new BufferedWriter(new FileWriter("/data/min_max.txt"));
 
         LinkedList<Double> valuesQueue = new LinkedList<Double>();
         try {
@@ -137,6 +139,7 @@ public class NeuralNetworkBtcPredictor {
         prepareData();
         DataSet trainingSet = loadTrainingData(learningDataFilePath);
         neuralNetwork.learn(trainingSet);
+        new File(neuralNetworkModelFilePath).getParentFile().mkdirs();
         neuralNetwork.save(neuralNetworkModelFilePath);
     }
 
@@ -166,6 +169,9 @@ public class NeuralNetworkBtcPredictor {
 
     public double predict(double[] inputData) {
         NeuralNetwork neuralNetwork = NeuralNetwork.createFromFile(neuralNetworkModelFilePath);
+        if (neuralNetwork == null) {
+            throw new RuntimeException("Błąd wczytywania sieci z pliku");
+        }
         if (inputData.length != slidingWindowSize) {
             throw new IllegalArgumentException("Length of array must be exactly " + slidingWindowSize + ".(Same as slidingWindowsSize)");
         }
