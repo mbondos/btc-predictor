@@ -8,19 +8,34 @@ import org.neuroph.core.events.LearningEventListener;
 import org.neuroph.core.learning.SupervisedLearning;
 import org.neuroph.nnet.MultiLayerPerceptron;
 import org.neuroph.nnet.learning.BackPropagation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tk.mbondos.CoinDeskData;
+import tk.mbondos.util.Normalizer;
 
 import java.io.*;
 import java.util.LinkedList;
 
 public class NeuralNetworkBtcPredictor {
+    private static final Logger log = LoggerFactory.getLogger(NeuralNetworkBtcPredictor.class);
     private int slidingWindowSize = 6;
     private double max = 0;
     private double min = Double.MAX_VALUE;
 
     private String rawDataFilePath = "data/btc_close_lifetime";
-    private String learningDataFilePath = "data/learningDataNotNormalised.csv";
+    private String learningDataFilePath = "data/learningData.csv";
     private String neuralNetworkModelFilePath = "data/stockPredictor.nnet";
+
+    public static void main(String[] args) throws IOException {
+        NeuralNetworkBtcPredictor predictor = new NeuralNetworkBtcPredictor(5, "data/btc_close_lifetime.csv");
+        predictor.prepareData();
+
+        System.out.println("Training starting");
+        predictor.trainNetwork();
+
+        System.out.println("Testing network");
+        predictor.testNetwork();
+    }
 
     public NeuralNetworkBtcPredictor() {
         CoinDeskData coinDeskData = new CoinDeskData();
@@ -33,7 +48,7 @@ public class NeuralNetworkBtcPredictor {
     }
 
     public void prepareData() throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(rawDataFilePath));
+        BufferedReader reader = new BufferedReader(new FileReader(new File(rawDataFilePath)));
         try {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -51,16 +66,17 @@ public class NeuralNetworkBtcPredictor {
         } finally {
             reader.close();
         }
-
         reader = new BufferedReader(new FileReader(rawDataFilePath));
         File file = new File(learningDataFilePath);
         file.getParentFile().mkdirs();
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-        BufferedWriter minMaxWriter = new BufferedWriter(new FileWriter("/data/min_max.txt"));
+        File minMaxFile = new File("data/min_max.txt");
+        BufferedWriter minMaxWriter = new BufferedWriter(new FileWriter(minMaxFile));
 
         LinkedList<Double> valuesQueue = new LinkedList<Double>();
         try {
             String line;
+            boolean notFirstLine = false;
             while ((line = reader.readLine()) != null) {
                 String[] tokens = line.split(",");
                 if (tokens.length == 2) {
@@ -71,8 +87,12 @@ public class NeuralNetworkBtcPredictor {
                     if (valuesQueue.size() == slidingWindowSize + 1) {
                         String valueLine = valuesQueue.toString().replaceAll(
                                 "\\[|\\]", "");
+                        if (notFirstLine) {
+                            writer.newLine();
+                        } else {
+                            notFirstLine = true;
+                        }
                         writer.write(valueLine);
-                        writer.newLine();
                         valuesQueue.removeFirst();
                     }
                 }
@@ -92,12 +112,12 @@ public class NeuralNetworkBtcPredictor {
     private double normalizeValue(double input) {
         validateMinMax();
 
-        return (input - min) / (max - min) * 0.8 + 0.1;
+        return Normalizer.normalizeValue(input, min, max);
     }
 
     private double deNormalizeValue(double input) {
         validateMinMax();
-        return min + (input - 0.1) * (max - min) / 0.8;
+        return Normalizer.deNormalizeValue(input, min, max);
     }
 
     private void validateMinMax() {
@@ -115,14 +135,13 @@ public class NeuralNetworkBtcPredictor {
             }
 
         }
-
     }
 
     public void trainNetwork() throws IOException {
         NeuralNetwork<BackPropagation> neuralNetwork =
                 new MultiLayerPerceptron(slidingWindowSize, 2 * slidingWindowSize + 1, 1);
 
-        int maxIterations = 1000;
+        int maxIterations = 10000;
         double learningRate = 0.5;
         double maxError = 0.00001;
         SupervisedLearning learningRule = neuralNetwork.getLearningRule();
@@ -131,16 +150,16 @@ public class NeuralNetworkBtcPredictor {
         learningRule.setMaxIterations(maxIterations);
         learningRule.addListener(learningEvent -> {
             SupervisedLearning rule = (SupervisedLearning) learningEvent.getSource();
-            System.out.println("Network error for interation "
-                    + rule.getCurrentIteration() + ": "
-                    + rule.getTotalNetworkError());
+            log.info("Network error for interation {} : {}",
+                     rule.getCurrentIteration(),
+                     rule.getTotalNetworkError());
         });
 
         prepareData();
         DataSet trainingSet = loadTrainingData(learningDataFilePath);
         neuralNetwork.learn(trainingSet);
-        new File(neuralNetworkModelFilePath).getParentFile().mkdirs();
         neuralNetwork.save(neuralNetworkModelFilePath);
+        log.info("Training successful.");
     }
 
     private DataSet loadTrainingData(String filePath) throws IOException {
@@ -167,8 +186,13 @@ public class NeuralNetworkBtcPredictor {
         return trainingSet;
     }
 
-    public double predict(double[] inputData) {
-        NeuralNetwork neuralNetwork = NeuralNetwork.createFromFile(neuralNetworkModelFilePath);
+    public double predict(double[] inputData) throws IOException {
+        File file = new File(neuralNetworkModelFilePath);
+        if (!file.exists()) {
+            throw new IOException("Neural network file not found.");
+        }
+
+        NeuralNetwork neuralNetwork = NeuralNetwork.createFromFile(file);
         if (neuralNetwork == null) {
             throw new RuntimeException("Błąd wczytywania sieci z pliku");
         }
@@ -185,11 +209,13 @@ public class NeuralNetworkBtcPredictor {
 
         neuralNetwork.calculate();
         double[] networkOutput = neuralNetwork.getOutput();
-        
+
+        log.info("Predicted: {}", deNormalizeValue(networkOutput[0]));
+
         return deNormalizeValue(networkOutput[0]);
     }
 
-    public double[] predictSeries(double[] inputData, int seriesLength) {
+    public double[] predictSeries(double[] inputData, int seriesLength) throws IOException {
         double[] output = new double[seriesLength];
         for (int i = 0; i < seriesLength; i++) {
             output[i] = predict(inputData);
@@ -210,7 +236,7 @@ public class NeuralNetworkBtcPredictor {
         return nums;
     }
 
-    void testNetwork() {
+    public void testNetwork() {
         NeuralNetwork neuralNetwork = NeuralNetwork.createFromFile(neuralNetworkModelFilePath);
         neuralNetwork.setInput(
                 normalizeValue(6844.32),
@@ -222,9 +248,8 @@ public class NeuralNetworkBtcPredictor {
 
         neuralNetwork.calculate();
         double[] networkOutput = neuralNetwork.getOutput();
-        System.out.println("Expected value  : 6855.4");
-        System.out.println("Predicted value : "
-                + deNormalizeValue(networkOutput[0]));
+        log.info("Expected value  : 6855.4 \n Predicted value {}: ",
+                 deNormalizeValue(networkOutput[0]));
     }
 
 }

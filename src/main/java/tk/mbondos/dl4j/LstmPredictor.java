@@ -18,7 +18,7 @@ import java.util.List;
 public class LstmPredictor {
     private static final Logger log = LoggerFactory.getLogger(LstmPredictor.class);
     private int exampleLength = 24;
-    private String file = "src/main/resources/data/btc_ohlc_lifetime.csv";
+    private String file = "data/btc_ohlc_lifetime.csv";
     private int batchSize = 64;
 
     private double splitRatio = 1; // Ratio of train to test data. Use 1 for 100% train data.
@@ -50,6 +50,8 @@ public class LstmPredictor {
         log.info("Saving model...");
 
         ModelSerializer.writeModel(network, networkFileLocation, true);
+
+        log.info("Training successful.");
     }
 
     public void testNetwork() throws IOException {

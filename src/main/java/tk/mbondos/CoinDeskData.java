@@ -1,5 +1,7 @@
 package tk.mbondos;
 
+import javafx.collections.transformation.SortedList;
+import javafx.util.Pair;
 import org.json.JSONObject;
 import tk.mbondos.dl4j.ExchangeRateData;
 
@@ -8,9 +10,7 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class CoinDeskData {
 
@@ -96,6 +96,9 @@ public class CoinDeskData {
         JSONObject jsonObject = new JSONObject(stringBuilder.toString());
         JSONObject bpi = jsonObject.getJSONObject("bpi");
 
+        List<Pair<String, Number>> list = new LinkedList<>();
+
+
         String bpiString = bpi.toString();
         bpiString = bpiString.substring(1, bpiString.length() - 1);
         String[] tokens = bpiString.split(",");
@@ -104,12 +107,33 @@ public class CoinDeskData {
             file.getParentFile().mkdirs();
             BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file));
 
+            String date;
+            double value;
+
             for (int i = 0; i < tokens.length; i++) {
-                if (i != 0) {
+                String[] pair = tokens[i].split(":");
+                date = pair[0].substring(1, pair[0].length() - 1);
+                value = Double.valueOf(pair[1]);
+                list.add(new Pair<>(date, value));
+            }
+
+            Collections.sort(list, (o1, o2) -> {
+                LocalDate date1 = LocalDate.parse(o1.getKey());
+                LocalDate date2 = LocalDate.parse(o2.getKey());
+                return date1.compareTo(date2);
+
+            });
+
+            boolean isNotFirstLine = false;
+            for (Pair pair :
+                    list) {
+                if (isNotFirstLine) {
                     bufferedWriter.newLine();
+                } else {
+                    isNotFirstLine = true;
                 }
-                String token = tokens[i].replace(":", ",");
-                bufferedWriter.write(token);
+
+                bufferedWriter.write(pair.getKey() + "," + pair.getValue());
             }
 
             bufferedWriter.flush();

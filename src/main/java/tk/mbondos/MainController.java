@@ -46,7 +46,8 @@ public class MainController {
 
     private CoinDeskData coinDeskData;
 
-    public void initialize() throws Exception{
+    public void initialize(){
+
         File file1 = new File("data/");
         file1.mkdirs();
         coinDeskData = new CoinDeskData();
@@ -58,35 +59,9 @@ public class MainController {
         yAxis.setUpperBound(10000);
         yAxis.setTickUnit(100);
 
-        //xAxis.setTickLabelGap(1);
-
-
-            //setUpTest(null);
-
-
-/*
-
-        BufferedWriter bufferedWriter = null;
-        try {
-            bufferedWriter = new BufferedWriter(new FileWriter(file1));
-            bufferedWriter.write("asdadssad");
-            bufferedWriter.flush();
-            bufferedWriter.close();
-
-            //File file = new File(MainController.class.getResource("/data/asd.txt").getFile());
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(file1));
-            String line = bufferedReader.readLine();
-
-            textArea.setVisible(true);
-            textArea.appendText(line);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-*/
-
     }
 
-    public void setUpTest(ActionEvent event) throws IOException {
+    public void setUpTest(ActionEvent event) {
         btcChart.getData().clear();
         btcChart.getData().addAll(
                 new XYChart.Series("Neuroph MLP ", preparePredictionNeuroph(31, LocalDate.now().minusDays(31))),
@@ -95,7 +70,7 @@ public class MainController {
         );
     }
 
-    public void setUpPrediction(ActionEvent event) throws IOException {
+    public void setUpPrediction(ActionEvent event) {
         btcChart.getData().clear();
         btcChart.getData().addAll(
                 new XYChart.Series("Neuroph MLP ", preparePredictionNeuroph(7, LocalDate.now())),
@@ -119,7 +94,7 @@ public class MainController {
 
             while ((line = reader.readLine()) != null) {
                 String[] tokens = line.split(",");
-                String date = LocalDate.parse(tokens[0].substring(1, 11)).toString();
+                String date = LocalDate.parse(tokens[0]).toString();
                 if (tokens.length != 1) {
                     final XYChart.Data<String, Number> data = new XYChart.Data<>(date, Double.valueOf(tokens[1]));
                     data.setNode(
@@ -147,7 +122,13 @@ public class MainController {
         for (int i = 0; i < sortedData.size(); i++) {
             inputData[i] = sortedData.get(i).getYValue().doubleValue();
         }
-        double[] predictSeries = predictor.predictSeries(inputData, seriesLength);
+        double[] predictSeries = new double[0];
+        try {
+            predictSeries = predictor.predictSeries(inputData, seriesLength);
+        } catch (IOException e) {
+            e.printStackTrace();
+            showErrorDialog("Nie znaleziono sieci Neuroph. \n Wybierz odpowiednią opcję w menu \"Trenuj\".");
+        }
 
         ObservableList<XYChart.Data<String, Number>> dataset = FXCollections.observableArrayList();
         SortedList<XYChart.Data<String, Number>> outputData = new SortedList<>(dataset);
@@ -159,9 +140,7 @@ public class MainController {
             dataset.add(data);
         }
 
-
         return outputData;
-
     }
 
     private SortedList<XYChart.Data<String, Number>> preparePredictionDl4j(int seriesLength, LocalDate startingDate) {
@@ -173,7 +152,7 @@ public class MainController {
             predictSeries = predictor.predictSeries(seriesLength, startingDate);
         } catch (IOException e) {
             e.printStackTrace();
-
+            showErrorDialog("Nie znaleziono sieci Deeplearnign4j. \n Wybierz odpowiednią opcję w menu \"Trenuj\".");
         }
 
 
@@ -191,76 +170,57 @@ public class MainController {
         return outputData;
     }
 
-    public void trainDl4j(ActionEvent event) throws IOException {
+    public void trainDl4j(ActionEvent event) {
 
         final Stage dialog = new Stage();
         TextArea textArea = new TextArea();
         PrintStream ps = new PrintStream(new Console(textArea));
-        ProgressIndicator progressIndicator = new ProgressIndicator();
         System.setOut(ps);
         System.setErr(ps);
         dialog.setTitle("Trenowanie sieci");
         dialog.initModality(Modality.APPLICATION_MODAL);
-        StackPane dialogVbox = new StackPane();
-        dialogVbox.getChildren().addAll(progressIndicator, textArea);
-        StackPane.setAlignment(progressIndicator, Pos.CENTER);
-        Scene dialogScene = new Scene(dialogVbox, 1000, 300);
+        StackPane dialogPane = new StackPane();
+        dialogPane.getChildren().addAll(textArea);
+        Scene dialogScene = new Scene(dialogPane, 1000, 300);
         dialog.setScene(dialogScene);
         dialog.show();
 
-        textArea.setVisible(false);
-
-            progressIndicator.setVisible(true);
-            LstmPredictor predictor = new LstmPredictor();
-
-
-            new Thread(() -> {
+        new Thread(() -> {
                 try {
+                    LstmPredictor predictor = new LstmPredictor();
                     predictor.trainNetwork();
                 } catch (IOException e) {
                     e.printStackTrace();
+                    showErrorDialog("Błąd podczas trenowania sieci: " + e.getMessage());
+                    dialog.close();
                 }
-                textArea.setVisible(true);
-                progressIndicator.setVisible(false);
             }).start();
-
-
-
     }
 
-    public void trainNeuroph(ActionEvent event) throws IOException {
+    public void trainNeuroph(ActionEvent event) {
         final Stage dialog = new Stage();
         TextArea textArea = new TextArea();
         PrintStream ps = new PrintStream(new Console(textArea));
-        ProgressIndicator progressIndicator = new ProgressIndicator();
         System.setOut(ps);
         System.setErr(ps);
         dialog.setTitle("Trenowanie sieci");
         dialog.initModality(Modality.APPLICATION_MODAL);
-        VBox dialogVbox = new VBox(20);
-        dialogVbox.getChildren().addAll(progressIndicator, textArea);
-        Scene dialogScene = new Scene(dialogVbox, 1000, 300);
+        StackPane dialogPane = new StackPane();
+        dialogPane.getChildren().addAll(textArea);
+        Scene dialogScene = new Scene(dialogPane, 1000, 300);
         dialog.setScene(dialogScene);
         dialog.show();
 
-        textArea.setVisible(false);
-        progressIndicator.setVisible(true);
-
-        NeuralNetworkBtcPredictor predictor = new NeuralNetworkBtcPredictor();
-
-  /*      new Thread(() -> {
-
-
-        }).start();*/
-
-            predictor.trainNetwork();
-
-
-        textArea.setVisible(true);
-        progressIndicator.setVisible(false);
-        textArea.setVisible(true);
-        progressIndicator.setVisible(false);
-
+        new Thread(() -> {
+            try {
+                NeuralNetworkBtcPredictor predictor = new NeuralNetworkBtcPredictor();
+                predictor.trainNetwork();
+            } catch (IOException e) {
+                showErrorDialog("Błąd podczas trenowania sieci: " + e.getMessage());
+                e.printStackTrace();
+                dialog.close();
+            }
+        }).start();
     }
 
     public void showAuthorDialog(ActionEvent event) {
@@ -269,6 +229,16 @@ public class MainController {
         alert.setHeaderText("Autor: Maksymilian Bondos");
         //alert.setContentText("");
         alert.showAndWait();
+    }
+    public void showErrorDialog(String message) {
+         TextArea textArea = new TextArea(message);
+
+        Stage dialog = new Stage();
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        StackPane dialogPane = new StackPane();
+        dialogPane.getChildren().addAll(textArea);
+        dialog.setScene(new Scene(dialogPane, 250, 400));
+        dialog.show();
     }
 
     public class Console extends OutputStream {
