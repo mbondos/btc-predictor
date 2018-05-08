@@ -59,6 +59,8 @@ public class MainController {
         yAxis.setUpperBound(10000);
         yAxis.setTickUnit(100);
 
+        setUpTest(null);
+
     }
 
     public void setUpTest(ActionEvent event) {
@@ -195,6 +197,7 @@ public class MainController {
                     dialog.close();
                 }
             }).start();
+        dialog.setOnCloseRequest(event1 -> setUpTest(null));
     }
 
     public void trainNeuroph(ActionEvent event) {
@@ -221,6 +224,7 @@ public class MainController {
                 dialog.close();
             }
         }).start();
+
     }
 
     public void showAuthorDialog(ActionEvent event) {
@@ -231,15 +235,22 @@ public class MainController {
         alert.showAndWait();
     }
     public void showErrorDialog(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Błąd");
+        alert.setHeaderText(message);
+        alert.showAndWait();
+    }
+/*
+    public void showErrorDialog(String message) {
          TextArea textArea = new TextArea(message);
 
         Stage dialog = new Stage();
         dialog.initModality(Modality.APPLICATION_MODAL);
         StackPane dialogPane = new StackPane();
         dialogPane.getChildren().addAll(textArea);
-        dialog.setScene(new Scene(dialogPane, 250, 400));
+        dialog.setScene(new Scene(dialogPane, 250, 250));
         dialog.show();
-    }
+    }*/
 
     public class Console extends OutputStream {
         private TextArea console;
