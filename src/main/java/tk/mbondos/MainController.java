@@ -38,13 +38,14 @@ public class MainController {
     @FXML
     private MenuItem menuTest;
 
-    @FXML
-    private TextArea textArea;
+
 
     private CoinDeskData coinDeskData;
 
     public void initialize(){
 
+
+        //Make sure directory "data" is present in relative path
         File file1 = new File("data/");
         file1.mkdirs();
         coinDeskData = new CoinDeskData();
@@ -57,7 +58,6 @@ public class MainController {
         yAxis.setTickUnit(100);
 
         setUpTest(null);
-
     }
 
     public void setUpTest(ActionEvent event) {

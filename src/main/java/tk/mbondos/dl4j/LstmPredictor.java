@@ -33,7 +33,7 @@ public class LstmPredictor {
 
     private MultiLayerNetwork network = LstmNetwork.buildLstmNetwork(iterator.inputColumns(), iterator.totalOutcomes());
 
-    public LstmPredictor() throws IOException {
+    public LstmPredictor() {
         CoinDeskData coinDeskData = new CoinDeskData();
         file = coinDeskData.getOhlcPriceLifetime();
     }
@@ -89,6 +89,13 @@ public class LstmPredictor {
         return predictionNormalized;
     }
 
+    /**
+     * Predicts values of specified number of days starting from specified date.
+     * @param seriesLength Number of time steps to predict.
+     * @param startingDate Starting day of prediction.
+     * @return Returns array of predicted values.
+     * @throws IOException Throw if ANN file not found.
+     */
     public double[] predictSeries(int seriesLength, LocalDate startingDate) throws IOException {
         double[] output = new double[seriesLength];
 

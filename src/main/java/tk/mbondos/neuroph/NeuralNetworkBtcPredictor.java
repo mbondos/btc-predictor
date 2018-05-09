@@ -20,7 +20,8 @@ public class NeuralNetworkBtcPredictor {
     private double max = 0;
     private double min = Double.MAX_VALUE;
 
-    private String rawDataFilePath = "data/btc_close_lifetime";
+    private String rawDataFilePath;
+    private String minMaxFilename = "data/min_max.txt";
     private String learningDataFilePath = "data/learningData.csv";
     private String neuralNetworkModelFilePath = "data/stockPredictor.nnet";
 
@@ -58,7 +59,7 @@ public class NeuralNetworkBtcPredictor {
         File file = new File(learningDataFilePath);
         file.getParentFile().mkdirs();
         BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-        File minMaxFile = new File("data/min_max.txt");
+        File minMaxFile = new File(minMaxFilename);
         BufferedWriter minMaxWriter = new BufferedWriter(new FileWriter(minMaxFile));
 
         LinkedList<Double> valuesQueue = new LinkedList<Double>();
@@ -111,7 +112,7 @@ public class NeuralNetworkBtcPredictor {
     private void validateMinMax() {
         if (max == 0 || min == Double.MAX_VALUE) {
             try {
-                BufferedReader bufferedReader = new BufferedReader(new FileReader("min_max.txt"));
+                BufferedReader bufferedReader = new BufferedReader(new FileReader(minMaxFilename));
 
                 min = Double.valueOf(bufferedReader.readLine());
                 max = Double.valueOf(bufferedReader.readLine());
@@ -129,7 +130,7 @@ public class NeuralNetworkBtcPredictor {
         NeuralNetwork<BackPropagation> neuralNetwork =
                 new MultiLayerPerceptron(slidingWindowSize, 2 * slidingWindowSize + 1, 1);
 
-        int maxIterations = 10000;
+        int maxIterations = 1000;
         double learningRate = 0.5;
         double maxError = 0.00001;
         SupervisedLearning learningRule = neuralNetwork.getLearningRule();
