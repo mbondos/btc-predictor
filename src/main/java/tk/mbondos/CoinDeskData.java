@@ -1,6 +1,5 @@
 package tk.mbondos;
 
-import javafx.collections.transformation.SortedList;
 import javafx.util.Pair;
 import org.json.JSONObject;
 import tk.mbondos.dl4j.ExchangeRateData;
@@ -10,7 +9,10 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 public class CoinDeskData {
 

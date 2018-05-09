@@ -3,8 +3,6 @@ package tk.mbondos.neuroph;
 import org.neuroph.core.NeuralNetwork;
 import org.neuroph.core.data.DataSet;
 import org.neuroph.core.data.DataSetRow;
-import org.neuroph.core.events.LearningEvent;
-import org.neuroph.core.events.LearningEventListener;
 import org.neuroph.core.learning.SupervisedLearning;
 import org.neuroph.nnet.MultiLayerPerceptron;
 import org.neuroph.nnet.learning.BackPropagation;
@@ -26,16 +24,6 @@ public class NeuralNetworkBtcPredictor {
     private String learningDataFilePath = "data/learningData.csv";
     private String neuralNetworkModelFilePath = "data/stockPredictor.nnet";
 
-    public static void main(String[] args) throws IOException {
-        NeuralNetworkBtcPredictor predictor = new NeuralNetworkBtcPredictor(5, "data/btc_close_lifetime.csv");
-        predictor.prepareData();
-
-        System.out.println("Training starting");
-        predictor.trainNetwork();
-
-        System.out.println("Testing network");
-        predictor.testNetwork();
-    }
 
     public NeuralNetworkBtcPredictor() {
         CoinDeskData coinDeskData = new CoinDeskData();

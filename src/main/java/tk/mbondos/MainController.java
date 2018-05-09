@@ -6,25 +6,22 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import tk.mbondos.dl4j.LstmPredictor;
 import tk.mbondos.neuroph.NeuralNetworkBtcPredictor;
 
 import java.io.*;
-import java.net.URL;
 import java.time.LocalDate;
-import java.util.ResourceBundle;
 
 public class MainController {
     public LineChart<?, ?> btcChart;
@@ -129,7 +126,7 @@ public class MainController {
             predictSeries = predictor.predictSeries(inputData, seriesLength);
         } catch (IOException e) {
             e.printStackTrace();
-            showErrorDialog("Nie znaleziono sieci Neuroph. \n Wybierz odpowiednią opcję w menu \"Trenuj\".");
+            showErrorDialog("Nie znaleziono pliku z siecią Neuroph. \nWybierz odpowiednią opcję w menu \"Trenuj\".");
         }
 
         ObservableList<XYChart.Data<String, Number>> dataset = FXCollections.observableArrayList();
@@ -154,7 +151,7 @@ public class MainController {
             predictSeries = predictor.predictSeries(seriesLength, startingDate);
         } catch (IOException e) {
             e.printStackTrace();
-            showErrorDialog("Nie znaleziono sieci Deeplearnign4j. \n Wybierz odpowiednią opcję w menu \"Trenuj\".");
+            showErrorDialog("Nie znaleziono pliku z siecią Deeplearnign4j. \nWybierz odpowiednią opcję w menu \"Trenuj\".");
         }
 
 
@@ -234,23 +231,12 @@ public class MainController {
         //alert.setContentText("");
         alert.showAndWait();
     }
-    public void showErrorDialog(String message) {
+    private void showErrorDialog(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Błąd");
         alert.setHeaderText(message);
         alert.showAndWait();
     }
-/*
-    public void showErrorDialog(String message) {
-         TextArea textArea = new TextArea(message);
-
-        Stage dialog = new Stage();
-        dialog.initModality(Modality.APPLICATION_MODAL);
-        StackPane dialogPane = new StackPane();
-        dialogPane.getChildren().addAll(textArea);
-        dialog.setScene(new Scene(dialogPane, 250, 250));
-        dialog.show();
-    }*/
 
     public class Console extends OutputStream {
         private TextArea console;
