@@ -22,15 +22,14 @@ public class CoinDeskData {
 
 
     public CoinDeskData() {
-/*        File directory = new File("src/main/resources/data/");
-        File[] files = directory.listFiles();
-        if(files!=null) { //some JVMs return null for empty dirs
-            for(File f : files){
-                f.delete();
-            }
-        }*/
     }
 
+    /**
+     * Get bitcoin price index from CoinDesk api.
+     *
+     * @param url Url with api query.
+     * @return StringBuilder with fetched data.
+     */
     private StringBuilder getBpi(URL url) {
         StringBuilder stringBuilder = new StringBuilder(1024);
         String line;
@@ -54,6 +53,11 @@ public class CoinDeskData {
         return stringBuilder;
     }
 
+    /**
+     * Get last 31 days close price.
+     *
+     * @return Filename of file with parsed data.
+     */
     public String getClosePriceLast31Days() {
         URL url = createUrl(String.format("%s?start=%s&end=%s", closePriceUrl, LocalDate.now().minusDays(31), LocalDate.now().minusDays(1)));
         String filename = "data/btc_close_last_31_days.csv";
@@ -62,6 +66,13 @@ public class CoinDeskData {
 
     }
 
+    /**
+     * Get close price form data range.
+     *
+     * @param startDate Start date.
+     * @param endDate   End date.
+     * @return Filename of file with parsed data.
+     */
     public String getClosePriceDateRange(LocalDate startDate, LocalDate endDate) {
         URL url = createUrl(String.format("%s?start=%s&end=%s", closePriceUrl, startDate, endDate));
         String filename = "data/btc_close_range.csv";
@@ -70,6 +81,13 @@ public class CoinDeskData {
 
     }
 
+    /**
+     * Get ohlc price from data range.
+     *
+     * @param startDate Start date.
+     * @param endDate   End date.
+     * @return Filename of file with parsed data.
+     */
     public String getOhlcPriceDateRange(LocalDate startDate, LocalDate endDate) {
         URL url = createUrl(String.format("%s?start=%s&end=%s", ohlcPriceUrl, startDate, endDate));
         String filename = "data/btc_ohlc_range.csv";
@@ -77,6 +95,11 @@ public class CoinDeskData {
         return filenamePrefix + filename;
     }
 
+    /**
+     * Get lifetime close price.
+     *
+     * @return Filename of file with parsed data.
+     */
     public String getClosePriceLifetime() {
         URL url = createUrl(String.format("%s?start=%s&end=%s", closePriceUrl, LocalDate.of(2010, 7, 19), LocalDate.now()));
         String filename = "data/btc_close_lifetime.csv";
@@ -84,6 +107,11 @@ public class CoinDeskData {
         return filenamePrefix + filename;
     }
 
+    /**
+     * Get lifetime ohlc price.
+     *
+     * @return Filename of file with parsed data.
+     */
     public String getOhlcPriceLifetime() {
         URL url = createUrl(String.format("%s?start=%s&end=%s", ohlcPriceUrl, LocalDate.of(2010, 7, 19), LocalDate.now()));
         String filename = "data/btc_ohlc_lifetime.csv";
@@ -91,6 +119,13 @@ public class CoinDeskData {
         return filenamePrefix + filename;
     }
 
+    /**
+     * Write to file. Close price only.
+     * Format: date, close
+     *
+     * @param filename      Save location.
+     * @param stringBuilder Fetched data.
+     */
     private void writeDataToFile(String filename, StringBuilder stringBuilder) {
         if (stringBuilder.length() == 0) {
             throw new RuntimeException();
@@ -146,6 +181,13 @@ public class CoinDeskData {
         }
     }
 
+    /**
+     * Write to file ohlc data.
+     * Format: date, open, high, low, close.
+     *
+     * @param filename      Save location.
+     * @param stringBuilder Fetched data.
+     */
     private void writeOhlcDataToFile(String filename, StringBuilder stringBuilder) {
         if (stringBuilder.length() == 0) {
             throw new RuntimeException();

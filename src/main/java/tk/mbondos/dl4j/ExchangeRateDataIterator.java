@@ -77,14 +77,14 @@ public class ExchangeRateDataIterator implements DataSetIterator {
     private void populateInputArray(List<ExchangeRateData> exchangeRateData, int i, INDArray input) {
         for (int j = i; j < i + exampleLength; j++) {
             ExchangeRateData data = exchangeRateData.get(j);
-            input.putScalar(new int[]{j - i, 0}, (Normalizer.normalizeValue(data.getOpen(),minArray[0],maxArray[0])));
-            input.putScalar(new int[]{j - i, 1}, (Normalizer.normalizeValue(data.getHigh(),minArray[1],maxArray[1])));
-            input.putScalar(new int[]{j - i, 2}, (Normalizer.normalizeValue(data.getLow(),minArray[2],maxArray[2])));
-            input.putScalar(new int[]{j - i, 3}, (Normalizer.normalizeValue(data.getClose(),minArray[3],maxArray[3])));
+            input.putScalar(new int[]{j - i, 0}, (Normalizer.normalizeValue(data.getOpen(), minArray[0], maxArray[0])));
+            input.putScalar(new int[]{j - i, 1}, (Normalizer.normalizeValue(data.getHigh(), minArray[1], maxArray[1])));
+            input.putScalar(new int[]{j - i, 2}, (Normalizer.normalizeValue(data.getLow(), minArray[2], maxArray[2])));
+            input.putScalar(new int[]{j - i, 3}, (Normalizer.normalizeValue(data.getClose(), minArray[3], maxArray[3])));
         }
     }
 
-    public List<ExchangeRateData> readDataFromFile(String filename) {
+    private List<ExchangeRateData> readDataFromFile(String filename) {
         List<ExchangeRateData> exchangeRateDataList = new ArrayList<>();
 
         try {
@@ -109,7 +109,7 @@ public class ExchangeRateDataIterator implements DataSetIterator {
         return exchangeRateDataList;
     }
 
-    public List<ExchangeRateData> readDataFromFileNoMinMax(String filename) {
+    private List<ExchangeRateData> readDataFromFileNoMinMax(String filename) {
         List<ExchangeRateData> exchangeRateDataList = new ArrayList<>();
 
         try {
@@ -171,10 +171,10 @@ public class ExchangeRateDataIterator implements DataSetIterator {
             ExchangeRateData nextData;
             for (int i = startIdx; i < endIdx; i++) {
                 int c = i - startIdx;
-                input.putScalar(new int[]{index, 0, c}, (Normalizer.normalizeValue(curData.getOpen(),minArray[0],maxArray[0])));
-                input.putScalar(new int[]{index, 1, c}, (Normalizer.normalizeValue(curData.getHigh(),minArray[1],maxArray[1])));
-                input.putScalar(new int[]{index, 2, c}, (Normalizer.normalizeValue(curData.getLow(),minArray[2],maxArray[2])));
-                input.putScalar(new int[]{index, 3, c}, (Normalizer.normalizeValue(curData.getClose(),minArray[3],maxArray[3])));
+                input.putScalar(new int[]{index, 0, c}, (Normalizer.normalizeValue(curData.getOpen(), minArray[0], maxArray[0])));
+                input.putScalar(new int[]{index, 1, c}, (Normalizer.normalizeValue(curData.getHigh(), minArray[1], maxArray[1])));
+                input.putScalar(new int[]{index, 2, c}, (Normalizer.normalizeValue(curData.getLow(), minArray[2], maxArray[2])));
+                input.putScalar(new int[]{index, 3, c}, (Normalizer.normalizeValue(curData.getClose(), minArray[3], maxArray[3])));
 
                 nextData = train.get(i + 1);
 
@@ -191,16 +191,16 @@ public class ExchangeRateDataIterator implements DataSetIterator {
         double value;
         switch (category) {
             case OPEN:
-                value = (Normalizer.normalizeValue(data.getOpen(),minArray[0],maxArray[0]));
+                value = (Normalizer.normalizeValue(data.getOpen(), minArray[0], maxArray[0]));
                 break;
             case HIGH:
-                value = (Normalizer.normalizeValue(data.getHigh(),minArray[1],maxArray[1]));
+                value = (Normalizer.normalizeValue(data.getHigh(), minArray[1], maxArray[1]));
                 break;
             case LOW:
-                value = (Normalizer.normalizeValue(data.getLow(),minArray[2],maxArray[2]));
+                value = (Normalizer.normalizeValue(data.getLow(), minArray[2], maxArray[2]));
                 break;
             case CLOSE:
-                value = (Normalizer.normalizeValue(data.getClose(),minArray[3],maxArray[3]));
+                value = (Normalizer.normalizeValue(data.getClose(), minArray[3], maxArray[3]));
                 break;
             default:
                 throw new NoSuchElementException();

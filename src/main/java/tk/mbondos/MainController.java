@@ -24,30 +24,24 @@ import java.io.*;
 import java.time.LocalDate;
 
 public class MainController {
+    @FXML
     public LineChart<?, ?> btcChart;
-
     @FXML
     private CategoryAxis xAxis;
-
     @FXML
     private NumberAxis yAxis;
-
     @FXML
     private MenuItem menuPredict;
-
     @FXML
     private MenuItem menuTest;
 
-
-
     private CoinDeskData coinDeskData;
 
-    public void initialize(){
-
-
+    public void initialize() {
         //Make sure directory "data" is present in relative path
         File file1 = new File("data/");
         file1.mkdirs();
+
         coinDeskData = new CoinDeskData();
 
         btcChart.setMinHeight(550);
@@ -57,9 +51,16 @@ public class MainController {
         yAxis.setUpperBound(10000);
         yAxis.setTickUnit(100);
 
+        //Populate chart in first screen.
         setUpTest(null);
     }
 
+    /**
+     * Populate chart with test data.
+     * Comparing both networks with real data.
+     *
+     * @param event Click on "Sieci" menu item "Testuj sieć".
+     */
     public void setUpTest(ActionEvent event) {
         btcChart.getData().clear();
         btcChart.getData().addAll(
@@ -69,6 +70,12 @@ public class MainController {
         );
     }
 
+    /**
+     * Populate chart with predicted future data.
+     * Data from both networks.
+     *
+     * @param event Click on "Sieci" menu item "Prognozuj".
+     */
     public void setUpPrediction(ActionEvent event) {
         btcChart.getData().clear();
         btcChart.getData().addAll(
@@ -78,6 +85,12 @@ public class MainController {
     }
 
 
+    /**
+     * Populate list of XYChart.Data with values from file.
+     *
+     * @param dataSetPath File path with data for preparation.
+     * @return List with date and value data.
+     */
     private SortedList<XYChart.Data<String, Number>> prepareData(String dataSetPath) {
         ObservableList<XYChart.Data<String, Number>> dataset = FXCollections.observableArrayList();
         SortedList<XYChart.Data<String, Number>> sortedData = new SortedList<>(dataset, (data1, data2) -> {
@@ -86,7 +99,7 @@ public class MainController {
             return date1.compareTo(date2);
         });
 
-        BufferedReader reader = null;
+        BufferedReader reader;
         try {
             reader = new BufferedReader(new FileReader(new File(dataSetPath)));
             String line;
@@ -111,6 +124,14 @@ public class MainController {
         return sortedData;
     }
 
+    /**
+     * Populate list of XYChart.Data with predicted values.
+     * For Neuroph network.
+     *
+     * @param seriesLength Number of predicted time steps.
+     * @param startingDate Prediction starting date.
+     * @return List with date and value data.
+     */
     private SortedList<XYChart.Data<String, Number>> preparePredictionNeuroph(int seriesLength, LocalDate startingDate) {
         startingDate = startingDate.minusDays(1);
         SortedList<XYChart.Data<String, Number>> sortedData = prepareData(coinDeskData.getClosePriceDateRange(startingDate.minusDays(5), startingDate));
@@ -142,9 +163,17 @@ public class MainController {
         return outputData;
     }
 
+    /**
+     * Populate list of XYChart.Data with predicted values.
+     * For DL4J network.
+     *
+     * @param seriesLength Number of predicted time steps.
+     * @param startingDate Prediction starting date.
+     * @return List with date and value data.
+     */
     private SortedList<XYChart.Data<String, Number>> preparePredictionDl4j(int seriesLength, LocalDate startingDate) {
         startingDate = startingDate.minusDays(1);
-        LstmPredictor predictor = null;
+        LstmPredictor predictor;
         double[] predictSeries = new double[0];
         try {
             predictor = new LstmPredictor();
@@ -169,8 +198,13 @@ public class MainController {
         return outputData;
     }
 
+    /**
+     * Train DL4J network.
+     * Shows dialog with console output.
+     *
+     * @param event Click on "Trenuj" menu item "Trenuj sieć Dl4j".
+     */
     public void trainDl4j(ActionEvent event) {
-
         final Stage dialog = new Stage();
         TextArea textArea = new TextArea();
         PrintStream ps = new PrintStream(new Console(textArea));
@@ -185,18 +219,24 @@ public class MainController {
         dialog.show();
 
         new Thread(() -> {
-                try {
-                    LstmPredictor predictor = new LstmPredictor();
-                    predictor.trainNetwork();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    showErrorDialog("Błąd podczas trenowania sieci: " + e.getMessage());
-                    dialog.close();
-                }
-            }).start();
+            try {
+                LstmPredictor predictor = new LstmPredictor();
+                predictor.trainNetwork();
+            } catch (IOException e) {
+                e.printStackTrace();
+                showErrorDialog("Błąd podczas trenowania sieci: " + e.getMessage());
+                dialog.close();
+            }
+        }).start();
         dialog.setOnCloseRequest(event1 -> setUpTest(null));
     }
 
+    /**
+     * Train DL4J network.
+     * Shows dialog with console output.
+     *
+     * @param event Click on "Trenuj" menu item "Trenuj sieć Neuroph".
+     */
     public void trainNeuroph(ActionEvent event) {
         final Stage dialog = new Stage();
         TextArea textArea = new TextArea();
@@ -231,6 +271,7 @@ public class MainController {
         //alert.setContentText("");
         alert.showAndWait();
     }
+
     private void showErrorDialog(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Błąd");
@@ -238,6 +279,9 @@ public class MainController {
         alert.showAndWait();
     }
 
+    /**
+     * Allows use of TextArea as console.
+     */
     public class Console extends OutputStream {
         private TextArea console;
 

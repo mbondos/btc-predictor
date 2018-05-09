@@ -1,6 +1,5 @@
 package tk.mbondos.dl4j;
 
-import javafx.util.Pair;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -13,19 +12,15 @@ import tk.mbondos.util.Normalizer;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.List;
 
 public class LstmPredictor {
     private static final Logger log = LoggerFactory.getLogger(LstmPredictor.class);
     private int exampleLength = 24;
     private String file = "data/btc_ohlc_lifetime.csv";
     private int batchSize = 64;
-
     private double splitRatio = 1; // Ratio of train to test data. Use 1 for 100% train data.
-    private int epochs = 100;
     private PriceCategory category = PriceCategory.CLOSE;
     private File networkFileLocation = new File("data/StockPriceLSTM_CLOSE.zip");
-
 
     private ExchangeRateDataIterator iterator = new ExchangeRateDataIterator(file, batchSize, exampleLength, splitRatio, category);
 
@@ -38,8 +33,14 @@ public class LstmPredictor {
         file = coinDeskData.getOhlcPriceLifetime();
     }
 
+    /**
+     * Train network over number of epochs and reset iterator.
+     *
+     * @throws IOException
+     */
     public void trainNetwork() throws IOException {
         log.info("Training...");
+        int epochs = 100;
         for (int i = 0; i < epochs; i++) {
             while (iterator.hasNext()) {
                 network.fit(iterator.next());
@@ -54,19 +55,12 @@ public class LstmPredictor {
         log.info("Training successful.");
     }
 
-    public void testNetwork() throws IOException {
-        log.info("Load model...");
-        network = ModelSerializer.restoreMultiLayerNetwork(networkFileLocation);
-
-        log.info("Testing...");
-        List<Pair<INDArray, INDArray>> test = iterator.getTestDataSet();
-        double max = iterator.getMaxNum(category);
-        double min = iterator.getMinNum(category);
-        predictPriceOneAhead(network, test, max, min, category);
-
-        log.info("Done...");
-    }
-
+    /**
+     * Predict tomorrows value and clear network state.
+     *
+     * @return Value of next day.
+     * @throws IOException Throw if ANN file not found.
+     */
     public double predictOne() throws IOException {
         String fileName = new ClassPathResource(coinDeskData.getOhlcPriceDateRange(LocalDate.now().minusDays(exampleLength), LocalDate.now())).getFile().getAbsolutePath();
 
@@ -81,6 +75,7 @@ public class LstmPredictor {
         INDArray array = iterator.getInputData(fileName);
 
         double prediction = network.rnnTimeStep(array).getDouble(exampleLength - 1);
+        network.rnnClearPreviousState();
         log.info("prediction {}", prediction);
         double predictionNormalized = Normalizer.deNormalizeValue(prediction, min, max);
 
@@ -91,6 +86,7 @@ public class LstmPredictor {
 
     /**
      * Predicts values of specified number of days starting from specified date.
+     *
      * @param seriesLength Number of time steps to predict.
      * @param startingDate Starting day of prediction.
      * @return Returns array of predicted values.
@@ -125,21 +121,5 @@ public class LstmPredictor {
 
         return output;
     }
-
-
-
-    private void predictPriceOneAhead(MultiLayerNetwork net, List<Pair<INDArray, INDArray>> testData, double max, double min, PriceCategory category) {
-        double[] predicts = new double[testData.size()];
-        double[] actuals = new double[testData.size()];
-        for (int i = 0; i < testData.size(); i++) {
-            predicts[i] = net.rnnTimeStep(testData.get(i).getKey()).getDouble(exampleLength - 1) * (max - min) + min;
-            actuals[i] = testData.get(i).getValue().getDouble(0);
-        }
-        log.info("Print out Predictions and Actual Values...");
-        log.info("Predict,Actual");
-        for (int i = 0; i < predicts.length; i++) log.info(predicts[i] + "," + actuals[i]);
-
-    }
-
 
 }

@@ -13,7 +13,8 @@ class HoveredThresholdNode extends StackPane {
 
     /**
      * Overwrites default node to show value on mouseover.
-     * @param value Value printed inside the node.
+     *
+     * @param value      Value printed inside the node.
      * @param colorValue Id of one of javafx default colors. Range 0-7 inclusive.
      */
     HoveredThresholdNode(Number value, int colorValue) {
@@ -21,18 +22,14 @@ class HoveredThresholdNode extends StackPane {
 
         final Label label = createDataThresholdLabel(value, colorValue);
 
-        setOnMouseEntered(new EventHandler<MouseEvent>() {
-            @Override public void handle(MouseEvent mouseEvent) {
-                getChildren().setAll(label);
-                setCursor(Cursor.NONE);
-                toFront();
-            }
+        setOnMouseEntered(mouseEvent -> {
+            getChildren().setAll(label);
+            setCursor(Cursor.NONE);
+            toFront();
         });
-        setOnMouseExited(new EventHandler<MouseEvent>() {
-            @Override public void handle(MouseEvent mouseEvent) {
-                getChildren().clear();
-                setCursor(Cursor.CROSSHAIR);
-            }
+        setOnMouseExited(mouseEvent -> {
+            getChildren().clear();
+            setCursor(Cursor.CROSSHAIR);
         });
     }
 
@@ -40,9 +37,9 @@ class HoveredThresholdNode extends StackPane {
         if (colorValue < 0 || colorValue > 7) {
             throw new IllegalArgumentException("Field colorValue must be in range 0-7.");
         }
-        DecimalFormat df= new DecimalFormat("####0.00");
+        DecimalFormat df = new DecimalFormat("####0.00");
         final Label label = new Label(df.format(value) + "");
-        label.getStyleClass().addAll( "default-color" + colorValue,"chart-line-symbol", "chart-series-line");
+        label.getStyleClass().addAll("default-color" + colorValue, "chart-line-symbol", "chart-series-line");
         label.setMinSize(Label.USE_PREF_SIZE, Label.USE_PREF_SIZE);
         return label;
     }

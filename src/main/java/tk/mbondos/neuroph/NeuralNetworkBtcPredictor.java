@@ -36,7 +36,13 @@ public class NeuralNetworkBtcPredictor {
         this.rawDataFilePath = rawDataFilePath;
     }
 
-    public void prepareData() throws IOException {
+    /**
+     * Creates file with min/max values and file with data prepared for training.
+     * Format 6 inputs 1 output per line. Comma separated.
+     *
+     * @throws IOException Throw if file not found.
+     */
+    private void prepareData() throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(new File(rawDataFilePath)));
         try {
             String line;
@@ -109,6 +115,9 @@ public class NeuralNetworkBtcPredictor {
         return Normalizer.deNormalizeValue(input, min, max);
     }
 
+    /**
+     * If min/max values not assigned fetches them from file.
+     */
     private void validateMinMax() {
         if (max == 0 || min == Double.MAX_VALUE) {
             try {
@@ -117,8 +126,6 @@ public class NeuralNetworkBtcPredictor {
                 min = Double.valueOf(bufferedReader.readLine());
                 max = Double.valueOf(bufferedReader.readLine());
 
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -126,6 +133,11 @@ public class NeuralNetworkBtcPredictor {
         }
     }
 
+    /**
+     * Train network using dataset.
+     *
+     * @throws IOException Throws if either file doesn't exist.
+     */
     public void trainNetwork() throws IOException {
         NeuralNetwork<BackPropagation> neuralNetwork =
                 new MultiLayerPerceptron(slidingWindowSize, 2 * slidingWindowSize + 1, 1);
@@ -140,8 +152,8 @@ public class NeuralNetworkBtcPredictor {
         learningRule.addListener(learningEvent -> {
             SupervisedLearning rule = (SupervisedLearning) learningEvent.getSource();
             log.info("Network error for interation {} : {}",
-                     rule.getCurrentIteration(),
-                     rule.getTotalNetworkError());
+                    rule.getCurrentIteration(),
+                    rule.getTotalNetworkError());
         });
 
         prepareData();
@@ -151,6 +163,13 @@ public class NeuralNetworkBtcPredictor {
         log.info("Training successful.");
     }
 
+    /**
+     * Loads data to DataSet object from file.
+     *
+     * @param filePath Filepath.
+     * @return Dataset for training.
+     * @throws IOException Throw if file doesn't exist.
+     */
     private DataSet loadTrainingData(String filePath) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
         DataSet trainingSet = new DataSet(slidingWindowSize, 1);
@@ -175,6 +194,13 @@ public class NeuralNetworkBtcPredictor {
         return trainingSet;
     }
 
+    /**
+     * Predicts single value.
+     *
+     * @param inputData Data used for prediction.
+     * @return Predicted value.
+     * @throws IOException Throw if network file doesn't exist.
+     */
     public double predict(double[] inputData) throws IOException {
         File file = new File(neuralNetworkModelFilePath);
         if (!file.exists()) {
@@ -204,6 +230,14 @@ public class NeuralNetworkBtcPredictor {
         return deNormalizeValue(networkOutput[0]);
     }
 
+    /**
+     * Predict values.
+     *
+     * @param inputData    Data used for prediction.
+     * @param seriesLength Number time steps to predict.
+     * @return Array of predicted values.
+     * @throws IOException Throw if network file doesn't exist.
+     */
     public double[] predictSeries(double[] inputData, int seriesLength) throws IOException {
         double[] output = new double[seriesLength];
         for (int i = 0; i < seriesLength; i++) {
@@ -215,30 +249,19 @@ public class NeuralNetworkBtcPredictor {
         return output;
     }
 
-    public double[] shiftLeft(double[] nums) {
-        if (nums == null || nums.length <= 1) {
-            return nums;
+    /**
+     * Shifts array to the left by one.
+     *
+     * @param numbers Array for shifting.
+     * @return Shifted array.
+     */
+    private double[] shiftLeft(double[] numbers) {
+        if (numbers == null || numbers.length <= 1) {
+            return numbers;
         }
-        double start = nums[0];
-        System.arraycopy(nums, 1, nums, 0, nums.length - 1);
-        nums[nums.length - 1] = start;
-        return nums;
+        double start = numbers[0];
+        System.arraycopy(numbers, 1, numbers, 0, numbers.length - 1);
+        numbers[numbers.length - 1] = start;
+        return numbers;
     }
-
-    public void testNetwork() {
-        NeuralNetwork neuralNetwork = NeuralNetwork.createFromFile(neuralNetworkModelFilePath);
-        neuralNetwork.setInput(
-                normalizeValue(6844.32),
-                normalizeValue(6926.02),
-                normalizeValue(6816.74),
-                normalizeValue(7049.79),
-                normalizeValue(7417.89),
-                normalizeValue(6789.3));
-
-        neuralNetwork.calculate();
-        double[] networkOutput = neuralNetwork.getOutput();
-        log.info("Expected value  : 6855.4 \n Predicted value {}: ",
-                 deNormalizeValue(networkOutput[0]));
-    }
-
 }
