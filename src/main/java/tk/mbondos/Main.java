@@ -12,18 +12,10 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("main.fxml"));
         primaryStage.setTitle("Bitcoin Predictor");
-        primaryStage.getIcons().add(new Image("https://i.imgur.com/54ZleiH.png"));
+        primaryStage.getIcons().add(new Image("file:logo.png"));
         Scene scene = new Scene(root, 1300, 600);
         scene.getStylesheets().add("style.css");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
-
-
-
-
-
-
-
-
 }

@@ -14,6 +14,7 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.Alert;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
+import javafx.scene.image.Image;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -206,6 +207,7 @@ public class MainController {
      */
     public void trainDl4j(ActionEvent event) {
         final Stage dialog = new Stage();
+        dialog.getIcons().add(new Image("file:logo.png"));
         TextArea textArea = new TextArea();
         PrintStream ps = new PrintStream(new Console(textArea));
         System.setOut(ps);
@@ -239,6 +241,7 @@ public class MainController {
      */
     public void trainNeuroph(ActionEvent event) {
         final Stage dialog = new Stage();
+        dialog.getIcons().add(new Image("file:logo.png"));
         TextArea textArea = new TextArea();
         PrintStream ps = new PrintStream(new Console(textArea));
         System.setOut(ps);
